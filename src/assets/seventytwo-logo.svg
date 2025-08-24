@@ -1,0 +1,17 @@
+<svg width="280" height="80" viewBox="0 0 280 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- "72" with upward arrow - matching the image design -->
+  <g fill="#1F2937">
+    <!-- "7" -->
+    <path d="M10 10 L50 10 L50 18 L28 18 L28 55 L18 55 L18 10 Z"/>
+    
+    <!-- "2" -->
+    <path d="M60 10 L90 10 Q100 10 100 20 Q100 30 90 30 L75 30 L75 38 L100 38 L100 46 L65 46 Q60 46 60 41 Q60 36 65 36 L85 36 Q90 36 90 25 Q90 18 85 18 L60 18 L60 10 Z"/>
+    
+    <!-- Upward trending arrow -->
+    <path d="M115 35 L140 35 L135 30 L150 40 L135 50 L140 45 L115 45 Z"/>
+    <path d="M130 40 L150 20 L155 25 L135 45 Z"/>
+  </g>
+  
+  <!-- "Seventy Two X" text below -->
+  <text x="10" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#1F2937">Seventy Two X</text>
+</svg>
