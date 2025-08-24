@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { supabase, getUserProfile, getUserBusiness } from '../lib/supabase';
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState({
@@ -41,9 +42,9 @@ const Profile: React.FC = () => {
       }
       
       setProfileData({
-        name: profile.full_name || '',
+        name: profile?.full_name || '',
         email: user!.email || '',
-        phone: profile.mobile_number || '',
+        phone: profile?.mobile_number || '',
         company: business?.business_name || '',
         industry: business?.business_category || 'Technology',
         location: business?.business_location || '',
@@ -52,6 +53,17 @@ const Profile: React.FC = () => {
       });
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Set default values if profile loading fails
+      setProfileData({
+        name: '',
+        email: user!.email || '',
+        phone: '',
+        company: '',
+        industry: 'Technology',
+        location: '',
+        founded: '2020',
+        employees: '1 (Just me)',
+      });
     } finally {
       setLoading(false);
     }

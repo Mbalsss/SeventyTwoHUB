@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
 
   const translations = {
     en: {
-      welcome: "Welcome to BizBoost Hub",
+      welcome: "Welcome to SeventyTwo X",
       subtitle: "Empowering South African entrepreneurs to build thriving businesses",
       monthlyRevenue: "Monthly Revenue",
       activeCustomers: "Active Customers",
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
       quickActions: "Quick Actions"
     },
     af: {
-      welcome: "Welkom by BizBoost Hub",
+      welcome: "Welkom by SeventyTwo X",
       subtitle: "Bemagtiging van Suid-Afrikaanse entrepreneurs om florerende besighede te bou",
       monthlyRevenue: "Maandelikse Inkomste",
       activeCustomers: "Aktiewe Kliënte",
@@ -105,7 +105,7 @@ const Dashboard: React.FC = () => {
       quickActions: "Vinnige Aksies"
     },
     zu: {
-      welcome: "Siyakwamukela ku-BizBoost Hub",
+      welcome: "Siyakwamukela ku-SeventyTwo X",
       subtitle: "Sinikeza amandla osomabhizinisi baseNingizimu Afrika ukuthi bakhe amabhizinisi aphumelelayo",
       monthlyRevenue: "Imali Yenyanga",
       activeCustomers: "Amakhasimende Asebenzayo",

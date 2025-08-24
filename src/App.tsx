@@ -39,7 +39,6 @@ const ProgramManagement = React.lazy(() => import("./pages/admin/ProgramManageme
 const PublicApplicationForm = React.lazy(() => import("./pages/PublicApplicationForm"));
 const CreateAccount = React.lazy(() => import("./pages/registration/CreateAccount"));
 const BusinessInformation = React.lazy(() => import("./pages/registration/BusinessInformation"));
-const SupportingDocuments = React.lazy(() => import("./pages/registration/SupportingDocuments"));
 const ApplicationType = React.lazy(() => import("./pages/registration/ApplicationType"));
 const Confirmation = React.lazy(() => import("./pages/registration/Confirmation"));
 
@@ -114,7 +113,6 @@ function App() {
               <Route path="/apply/:linkId" element={<PublicApplicationForm />} />
               <Route path="/register/account" element={<CreateAccount />} />
               <Route path="/register/business" element={<BusinessInformation />} />
-              <Route path="/register/documents" element={<SupportingDocuments />} />
               <Route path="/register/application-type" element={<ApplicationType />} />
               <Route path="/register/confirmation" element={<Confirmation />} />
 

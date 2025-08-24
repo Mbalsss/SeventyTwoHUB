@@ -259,7 +259,7 @@ const PublicApplicationForm: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <TrendingUp className="w-8 h-8 text-primary-500" />
-            <span className="text-2xl font-bold text-gray-900">BizBoost Hub</span>
+            <span className="text-2xl font-bold text-gray-900">SeventyTwo X</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{program.name}</h1>
           <p className="text-gray-600">{program.description}</p>

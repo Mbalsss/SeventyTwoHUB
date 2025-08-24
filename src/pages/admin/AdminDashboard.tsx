@@ -27,15 +27,32 @@ import NotificationCenter from '@components/admin/NotificationCenter';
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Listen for tab changes from AdminLayout
+  useEffect(() => {
+    const handleTabChange = (event: CustomEvent) => {
+      setActiveTab(event.detail.tab);
+    };
+
+    window.addEventListener('adminTabChange', handleTabChange as EventListener);
+    return () => window.removeEventListener('adminTabChange', handleTabChange as EventListener);
+  }, []);
+
+  // Expose setActiveTab to parent layout
+  useEffect(() => {
+    (window as any).setAdminTab = setActiveTab;
+    return () => {
+      delete (window as any).setAdminTab;
+    };
+  }, []);
+
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
     activePrograms: 0,
     pendingRegistrations: 0,
-    totalRevenue: 0,
     userGrowth: 0,
     programGrowth: 0,
-    registrationGrowth: 0,
-    revenueGrowth: 0
+    registrationGrowth: 0
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -60,7 +77,7 @@ const AdminDashboard: React.FC = () => {
         supabase.from('profiles').select('id, created_at'),
         supabase.from('programs').select('id, status, created_at'),
         supabase.from('business_registrations').select('id, status, created_at'),
-        supabase.from('program_enrollments').select('id, created_at')
+        supabase.from('program_enrollments').select('id, enrolled_at')
       ]);
 
       // Calculate statistics
@@ -86,11 +103,9 @@ const AdminDashboard: React.FC = () => {
         totalUsers,
         activePrograms,
         pendingRegistrations,
-        totalRevenue: 2400000, // Mock data
         userGrowth: Math.round(userGrowth * 10) / 10,
         programGrowth: 12.5,
-        registrationGrowth: 8.3,
-        revenueGrowth: 15.2
+        registrationGrowth: 8.3
       });
 
       // Load recent activity
@@ -165,7 +180,7 @@ const AdminDashboard: React.FC = () => {
         .select(`
           id, submitted_at,
           programs(name),
-          profiles(full_name)
+          profiles!program_applications_applicant_id_fkey(full_name)
         `)
         .eq('status', 'submitted')
         .order('submitted_at', { ascending: true });
@@ -262,15 +277,6 @@ const AdminDashboard: React.FC = () => {
       icon: Clock,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50'
-    },
-    {
-      title: 'Platform Revenue',
-      value: `R${(dashboardStats.totalRevenue / 1000000).toFixed(1)}M`,
-      change: `+${dashboardStats.revenueGrowth}%`,
-      trend: 'up',
-      icon: DollarSign,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
     }
   ];
 
@@ -334,11 +340,11 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {statCards.map((stat, index) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {statCards.map((stat) => {
                   const Icon = stat.icon;
                   return (
-                    <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div key={stat.title} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-3">
                         <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                           <Icon className={`w-5 h-5 ${stat.color}`} />
@@ -404,7 +410,7 @@ const AdminDashboard: React.FC = () => {
                   
                   <div className="space-y-3">
                     {recentActivity.slice(0, 5).map(activity => (
-                      <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={`activity-${activity.id}`} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className={`p-1 rounded-full ${
                           activity.type === 'registration' ? 'bg-blue-100' : 'bg-green-100'
                         }`}>

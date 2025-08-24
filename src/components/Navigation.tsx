@@ -47,7 +47,7 @@ const Navigation: React.FC<NavigationProps> = ({ onClose }) => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-6 h-6 text-primary-500" />
-            <span className="text-lg font-bold text-gray-900">BizBoost Hub</span>
+            <span className="text-lg font-bold text-gray-900">SeventyTwo X</span>
           </div>
           {onClose && (
             <button

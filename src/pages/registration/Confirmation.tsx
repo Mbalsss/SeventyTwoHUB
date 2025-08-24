@@ -40,6 +40,28 @@ const Confirmation: React.FC = () => {
       const result = await submitBusinessRegistration(submissionData);
       setApplicationNumber(result.reference_number);
       
+      // Create program applications for selected programs
+      if (registrationData.step4?.selectedPrograms) {
+        for (const program of registrationData.step4.selectedPrograms) {
+          try {
+            await supabase
+              .from('program_applications')
+              .insert({
+                program_id: program.id,
+                applicant_id: result.id, // Use registration ID as temporary applicant ID
+                application_data: {
+                  ...submissionData,
+                  program_name: program.name,
+                  application_source: 'business_registration'
+                },
+                status: 'submitted'
+              });
+          } catch (appError) {
+            console.error(`Error creating application for program ${program.name}:`, appError);
+          }
+        }
+      }
+      
       // Upload documents if any were provided
       if (registrationData.step3) {
         const documents = registrationData.step3;

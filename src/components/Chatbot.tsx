@@ -40,8 +40,8 @@ const Chatbot: React.FC = () => {
   const faqs: FAQ[] = [
     {
       id: '1',
-      question: 'How do I get started with BizBoost Hub?',
-      answer: 'Welcome to BizBoost Hub! Start by completing your profile, then explore the Learning Modules to build essential business skills. Check out the Quick Actions on your dashboard for guided next steps.',
+      question: 'How do I get started with SeventyTwo X?',
+      answer: 'Welcome to SeventyTwo X! Start by completing your profile, then explore the Learning Modules to build essential business skills. Check out the Quick Actions on your dashboard for guided next steps.',
       category: 'getting-started',
       keywords: ['start', 'begin', 'new', 'first', 'setup']
     },
@@ -132,14 +132,14 @@ const Chatbot: React.FC = () => {
     {
       id: '14',
       question: 'Can I use the platform in my local language?',
-      answer: 'Yes! BizBoost Hub supports multiple South African languages including English, Afrikaans, isiZulu, isiXhosa, Sesotho, and Setswana. Change your language preference in the dashboard settings.',
+      answer: 'Yes! SeventyTwo X supports multiple South African languages including English, Afrikaans, isiZulu, isiXhosa, Sesotho, and Setswana. Change your language preference in the dashboard settings.',
       category: 'account',
       keywords: ['language', 'afrikaans', 'zulu', 'xhosa', 'sesotho', 'setswana', 'local']
     },
     {
       id: '15',
       question: 'How do I contact support?',
-      answer: 'For technical support, email support@bizboost.co.za. For business advice, use the Mentorship Hub or Community discussions. You can also access help resources in each section of the platform.',
+      answer: 'For technical support, email support@seventytwo.co.za. For business advice, use the Mentorship Hub or Community discussions. You can also access help resources in each section of the platform.',
       category: 'account',
       keywords: ['support', 'help', 'contact', 'email', 'assistance', 'problem']
     }
@@ -301,7 +301,7 @@ You can also contact our support team at support@bizboost.co.za for personalized
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-primary-500 text-white rounded-t-xl">
         <div className="flex items-center space-x-2">
           <Bot className="w-5 h-5" />
-          <span className="font-semibold">BizBoost Assistant</span>
+          <span className="font-semibold">SeventyTwo X Assistant</span>
         </div>
         <button
           onClick={() => setIsOpen(false)}
@@ -427,7 +427,7 @@ You can also contact our support team at support@bizboost.co.za for personalized
         
         <div className="flex items-center justify-center mt-2">
           <span className="text-xs text-gray-500">
-            Powered by BizBoost AI • Available 24/7
+            Powered by SeventyTwo X AI • Available 24/7
           </span>
         </div>
       </div>

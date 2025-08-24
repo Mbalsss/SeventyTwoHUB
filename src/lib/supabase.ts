@@ -18,6 +18,10 @@ export const getUserProfile = async (userId: string) => {
     .eq('id', userId)
     .single();
   if (error) {
+    // Don't throw error if no profile found, just return null
+    if (error.code === 'PGRST116') {
+      return null;
+    }
     console.error('Error fetching user profile:', error);
     throw error;
   }
@@ -41,16 +45,12 @@ export const getUserBusiness = async (userId: string) => {
     .from('businesses')
     .select('*')
     .eq('owner_id', userId)
-    .single();
+    .limit(1);
   if (error) {
-    // Don't throw error if no business found, just return null
-    if (error.code === 'PGRST116') {
-      return null;
-    }
     console.error('Error fetching user business:', error);
     throw error;
   }
-  return data;
+  return data?.[0] || null;
 };
 
 export const getActivePrograms = async () => {
