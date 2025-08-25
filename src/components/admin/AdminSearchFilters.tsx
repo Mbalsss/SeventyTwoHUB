@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, SortAsc, SortDesc, X } from 'lucide-react';
+import { Search, SortAsc, SortDesc, X } from 'lucide-react';
 
 interface FilterOption {
   value: string;

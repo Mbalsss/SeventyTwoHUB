@@ -1,9 +1,10 @@
+//src/components/admin/ProgramManagement.tsx
+
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Edit, 
-  Eye, 
-  Trash2, 
+  Eye,
   Users, 
   Calendar, 
   ExternalLink, 
@@ -17,9 +18,17 @@ import {
   FileText,
   AlertTriangle
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import {
+  getProgramsWithCounts,
+  createProgram as libCreateProgram,
+  generateApplicationLink as libGenerateApplicationLink,
+  getProgramApplications as libGetProgramApplications,
+  updateApplicationStatus as libUpdateApplicationStatus,
+  exportApplicationsCSV
+} from '../../lib/programManagement';
 import { useAuth } from '../../context/AuthContext';
 
+// Defines the structure of a Program object
 interface Program {
   id: string;
   name: string;
@@ -35,6 +44,35 @@ interface Program {
   enrollments_count: number;
 }
 
+// **FIX 1: Define a specific type for Application Status**
+type ApplicationStatus = 'approved' | 'rejected' | 'under_review' | 'submitted';
+
+// **FIX 2: Define a specific interface for an Application**
+interface Application {
+  id: string;
+  status: ApplicationStatus;
+  reference_number: string;
+  submitted_at: string;
+  reviewed_at?: string;
+  profiles: { full_name: string } | null;
+  businesses: {
+    business_name: string;
+    business_category: string;
+    business_location: string;
+  } | null;
+}
+
+// **FIX 3: Define a specific interface for the form data when creating a program**
+interface NewProgramData {
+  name: string;
+  description: string;
+  status: 'draft' | 'active';
+  start_date: string | null;
+  end_date: string | null;
+  max_participants: number | null;
+  application_deadline: string | null;
+}
+
 const ProgramManagement: React.FC = () => {
   const { user } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -44,7 +82,8 @@ const ProgramManagement: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
-  const [applications, setApplications] = useState<any[]>([]);
+  // **FIX 4: Use the new `Application` interface for the state**
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -61,50 +100,11 @@ const ProgramManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const { data, error } = await supabase
-        .from('programs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading programs:', error);
-        throw error;
-      }
-
-      // Calculate counts manually to avoid aggregation issues
-      const programsWithCounts = await Promise.all((data || []).map(async (program) => {
-        // Get application count
-        const { count: appCount, error: appError } = await supabase
-          .from('program_applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('program_id', program.id);
-
-        // Get enrollment count  
-        const { count: enrollCount, error: enrollError } = await supabase
-          .from('program_enrollments')
-          .select('*', { count: 'exact', head: true })
-          .eq('program_id', program.id);
-
-        if (appError) {
-          console.warn('Error counting applications for program', program.id, ':', appError);
-        }
-        if (enrollError) {
-          console.warn('Error counting enrollments for program', program.id, ':', enrollError);
-        }
-
-        return {
-          ...program,
-          applications_count: appCount || 0,
-          enrollments_count: enrollCount || 0
-        };
-      }));
-
-      setPrograms(programsWithCounts);
-    } catch (error) {
+      const data = await getProgramsWithCounts();
+      // **FIX 5: Removed unsafe `as any` cast. Trust the type from the library function.**
+      setPrograms(data);
+    } catch (error: any) {
       console.error('Error loading programs:', error);
-      
-      // Handle specific error types
       if (error?.code === '42501') {
         setError('You do not have permission to view programs. Please ensure you have admin privileges.');
       } else if (error?.code === '42703') {
@@ -134,74 +134,27 @@ const ProgramManagement: React.FC = () => {
     setFilteredPrograms(filtered);
   };
 
-  const createProgram = async (formData: any) => {
+  // **FIX 6: Use the `NewProgramData` interface instead of `any`**
+  const createProgram = async (formData: NewProgramData) => {
+  if (!user?.id) {
+    console.error("Create program cancelled: User not authenticated.");
+    alert("You must be signed in to create a program.");
+      return;
+  }
+
     try {
-      console.log('Creating program with data:', formData);
-      console.log('Current user:', user?.id);
-      
-      // Verify user has admin role before attempting creation
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data, error } = await supabase
-        .from('programs')
-        .insert({
-          ...formData,
-          created_by: user.id
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Program creation error:', error);
-        
-        // Handle specific RLS errors
-        if (error.code === '42501') {
-          throw new Error('You do not have permission to create programs. Please ensure you have admin privileges.');
-        }
-        
-        // Handle UUID format errors
-        if (error.message?.includes('invalid input syntax for type uuid')) {
-          throw new Error('Invalid user ID format. Please contact support.');
-        }
-        
-        throw error;
-      }
-
-      // Create default application form
-      const { error: formError } = await supabase
-        .from('application_forms')
-        .insert({
-          program_id: data.id,
-          form_config: {
-            title: `${formData.name} Application`,
-            description: `Apply for the ${formData.name} program`,
-            fields: [
-              { id: 'full_name', type: 'text', label: 'Full Name', required: true },
-              { id: 'email', type: 'email', label: 'Email Address', required: true },
-              { id: 'mobile_number', type: 'tel', label: 'Mobile Number', required: true },
-              { id: 'business_name', type: 'text', label: 'Business Name', required: true },
-              { id: 'business_category', type: 'select', label: 'Business Category', required: true, 
-                options: ['Retail & Trading', 'Food & Beverages', 'Agriculture', 'Manufacturing', 'Services', 'Technology'] },
-              { id: 'motivation', type: 'textarea', label: 'Why do you want to join this program?', required: true }
-            ]
-          }
-        });
-
-      if (formError) {
-        console.error('Application form creation error:', formError);
-        // Don't fail the whole operation if form creation fails
-      }
-
+    // The check is no longer needed here.
+      await libCreateProgram(user.id, formData);
       await loadPrograms();
       setShowCreateModal(false);
       alert('Program created successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating program:', error);
-      
-      // Show user-friendly error messages
-      if (error instanceof Error) {
+      if (error?.code === '42501') {
+        alert('You do not have permission to create programs. Please ensure you have admin privileges.');
+      } else if (error?.message?.includes('invalid input syntax for type uuid')) {
+        alert('Invalid user ID format. Please contact support.');
+      } else if (error instanceof Error) {
         alert(`Error creating program: ${error.message}`);
       } else {
         alert('Error creating program. Please try again.');
@@ -211,18 +164,8 @@ const ProgramManagement: React.FC = () => {
 
   const generateApplicationLink = async (programId: string) => {
     try {
-      // Generate a unique link ID
-      const linkId = `prog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const { error } = await supabase
-        .from('programs')
-        .update({ application_link_id: linkId })
-        .eq('id', programId);
-
-      if (error) throw error;
-
+      const linkId = await libGenerateApplicationLink(programId);
       await loadPrograms();
-      
       const fullLink = `${window.location.origin}/apply/${linkId}`;
       navigator.clipboard.writeText(fullLink);
       alert(`Application link generated and copied to clipboard:\n${fullLink}`);
@@ -234,39 +177,8 @@ const ProgramManagement: React.FC = () => {
 
   const loadProgramApplications = async (programId: string) => {
     try {
-      console.log('Loading applications for program:', programId);
-      
-      const { data, error } = await supabase
-        .from('program_applications')
-        .select(`
-          *,
-          profiles!program_applications_applicant_id_fkey(
-            full_name
-          ),
-          businesses!program_applications_business_id_fkey(
-            business_name,
-            business_category,
-            business_location
-          )
-        `)
-        .eq('program_id', programId)
-        .order('submitted_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading program applications:', error);
-        
-        // Handle specific errors
-        if (error.code === '42501') {
-          setError('You do not have permission to view applications.');
-          setApplications([]);
-          return;
-        }
-        
-        throw error;
-      }
-      
+      const data = await libGetProgramApplications(programId);
       setApplications(data || []);
-      console.log('Loaded applications:', data?.length || 0);
     } catch (error) {
       console.error('Error loading applications:', error);
       setApplications([]);
@@ -274,41 +186,12 @@ const ProgramManagement: React.FC = () => {
     }
   };
 
-  const updateApplicationStatus = async (applicationId: string, status: string, notes?: string) => {
+  // **FIX 7: Use the `ApplicationStatus` type for the status parameter**
+  const updateApplicationStatus = async (applicationId: string, status: ApplicationStatus, notes?: string) => {
     try {
       setActionLoading(applicationId);
-      
-      const { error } = await supabase
-        .from('program_applications')
-        .update({
-          status,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id,
-          notes
-        })
-        .eq('id', applicationId);
-
-      if (error) throw error;
-
-      // If approved, create enrollment
-      if (status === 'approved') {
-        const application = applications.find(app => app.id === applicationId);
-        if (application) {
-          const { error: enrollmentError } = await supabase
-            .from('program_enrollments')
-            .insert({
-              program_id: application.program_id,
-              participant_id: application.applicant_id,
-              application_id: applicationId
-            });
-          
-          if (enrollmentError) {
-            console.error('Error creating enrollment:', enrollmentError);
-            // Don't fail the status update if enrollment creation fails
-          }
-        }
-      }
-
+      // **FIX 8: Removed unsafe `as any` cast.**
+      await libUpdateApplicationStatus(applicationId, status, user?.id, notes);
       if (selectedProgram) {
         await loadProgramApplications(selectedProgram.id);
       }
@@ -323,39 +206,7 @@ const ProgramManagement: React.FC = () => {
 
   const exportApplications = async (programId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('program_applications')
-        .select(`
-          *,
-          profiles!program_applications_applicant_id_fkey(
-            full_name
-          ),
-          businesses!program_applications_business_id_fkey(
-            business_name,
-            business_category,
-            business_location
-          )
-        `)
-        .eq('program_id', programId);
-
-      if (error) throw error;
-
-      // Convert to CSV
-      const csvContent = [
-        ['Reference Number', 'Applicant Name', 'Email', 'Business Name', 'Category', 'Location', 'Status', 'Submitted Date'],
-        ...(data || []).map(app => [
-          app.reference_number,
-          app.profiles?.full_name || '',
-          app.application_data?.email || '',
-          app.businesses?.business_name || '',
-          app.businesses?.business_category || '',
-          app.businesses?.business_location || '',
-          app.status,
-          new Date(app.submitted_at).toLocaleDateString()
-        ])
-      ].map(row => row.join(',')).join('\n');
-
-      // Download CSV
+      const csvContent = await exportApplicationsCSV(programId);
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -585,15 +436,20 @@ const ProgramManagement: React.FC = () => {
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.target as HTMLFormElement);
-              createProgram({
-                name: formData.get('name'),
-                description: formData.get('description'),
-                status: formData.get('status'),
-                start_date: formData.get('start_date') || null,
-                end_date: formData.get('end_date') || null,
-                max_participants: parseInt(formData.get('max_participants') as string) || null,
-                application_deadline: formData.get('application_deadline') || null
-              });
+
+              // **FIX 9: Construct a strongly-typed object before calling createProgram**
+              const newProgramData: NewProgramData = {
+                name: String(formData.get('name') || ''),
+                description: String(formData.get('description') || ''),
+                status: formData.get('status') === 'active' ? 'active' : 'draft',
+                start_date: (formData.get('start_date') as string) || null,
+                end_date: (formData.get('end_date') as string) || null,
+                max_participants: formData.get('max_participants') ? parseInt(formData.get('max_participants') as string, 10) : null,
+                application_deadline: (formData.get('application_deadline') as string) || null
+              };
+
+              createProgram(newProgramData);
+
             }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Program Name</label>

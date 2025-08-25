@@ -8,7 +8,7 @@ interface Notification {
   message: string;
   timestamp: string;
   priority: 'low' | 'medium' | 'high';
-  read: boolean;
+  read?: boolean; // Made optional to accept items without explicit read status
   actionUrl?: string;
 }
 

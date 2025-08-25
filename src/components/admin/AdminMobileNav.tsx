@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Users, FileText, Shield, Settings, Bell } from 'lucide-react';
+import { BarChart3, Users, FileText, Shield, Settings } from 'lucide-react';
 
 interface AdminMobileNavProps {
   activeTab: string;
