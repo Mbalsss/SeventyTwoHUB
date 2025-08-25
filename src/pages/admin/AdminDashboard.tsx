@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
-  TrendingUp, 
-  DollarSign, 
+  TrendingUp,
   Activity, 
   FileText, 
   BarChart3,
@@ -10,22 +9,18 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Search,
-  Filter,
-  Download,
   RefreshCw
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
-import UserManagement from '@components/admin/UserManagement';
-import ProgramManagement from '@components/admin/ProgramManagement';
-import BusinessRegistrationReview from '@components/admin/BusinessRegistrationReview';
-import AdminAnalytics from '@components/admin/AdminAnalytics';
-import AdminSettings from '@components/admin/AdminSettings';
-import NotificationCenter from '@components/admin/NotificationCenter';
+import { getDashboardStats, getRecentActivity as fetchRecentActivity, getDashboardNotifications as fetchDashboardNotifications, setupAdminRealtime, } from '../../lib/adminDashboardQueries';
+import type {ActivityItem, NotificationItem} from '../../lib/adminDashboardQueries';
+import UserManagement from '../../components/admin/UserManagement';
+import ProgramManagement from '../../components/admin/ProgramManagement';
+import BusinessRegistrationReview from '../../components/admin/BusinessRegistrationReview';
+import AdminAnalytics from '../../components/admin/AdminAnalytics';
+import AdminSettings from '../../components/admin/AdminSettings';
+import NotificationCenter from  '../../components/admin/NotificationCenter';
 
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Listen for tab changes from AdminLayout
@@ -40,9 +35,9 @@ const AdminDashboard: React.FC = () => {
 
   // Expose setActiveTab to parent layout
   useEffect(() => {
-    (window as any).setAdminTab = setActiveTab;
+    (window as unknown as { setAdminTab?: (tab: string) => void }).setAdminTab = setActiveTab;
     return () => {
-      delete (window as any).setAdminTab;
+      delete (window as unknown as { setAdminTab?: (tab: string) => void }).setAdminTab;
     };
   }, []);
 
@@ -54,8 +49,8 @@ const AdminDashboard: React.FC = () => {
     programGrowth: 0,
     registrationGrowth: 0
   });
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,54 +61,18 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Load dashboard statistics
-      const [
-        usersResult,
-        programsResult,
-        registrationsResult,
-        enrollmentsResult
-      ] = await Promise.all([
-        supabase.from('profiles').select('id, created_at'),
-        supabase.from('programs').select('id, status, created_at'),
-        supabase.from('business_registrations').select('id, status, created_at'),
-        supabase.from('program_enrollments').select('id, enrolled_at')
-      ]);
 
-      // Calculate statistics
-      const totalUsers = usersResult.data?.length || 0;
-      const activePrograms = programsResult.data?.filter(p => p.status === 'active').length || 0;
-      const pendingRegistrations = registrationsResult.data?.filter(r => r.status === 'pending').length || 0;
-      
-      // Calculate growth rates (last 30 days vs previous 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      // Dashboard statistics
+      const stats = await getDashboardStats();
+      setDashboardStats(stats);
 
-      const recentUsers = usersResult.data?.filter(u => new Date(u.created_at) > thirtyDaysAgo).length || 0;
-      const previousUsers = usersResult.data?.filter(u => {
-        const date = new Date(u.created_at);
-        return date > sixtyDaysAgo && date <= thirtyDaysAgo;
-      }).length || 0;
+      // Recent activity
+      const activities = await fetchRecentActivity();
+      setRecentActivity(activities);
 
-      const userGrowth = previousUsers > 0 ? ((recentUsers - previousUsers) / previousUsers * 100) : 0;
-
-      setDashboardStats({
-        totalUsers,
-        activePrograms,
-        pendingRegistrations,
-        userGrowth: Math.round(userGrowth * 10) / 10,
-        programGrowth: 12.5,
-        registrationGrowth: 8.3
-      });
-
-      // Load recent activity
-      await loadRecentActivity();
-      
-      // Load notifications
-      await loadNotifications();
-
+      // Notifications
+      const notifs = await fetchDashboardNotifications();
+      setNotifications(notifs);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -121,124 +80,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadRecentActivity = async () => {
-    try {
-      // Get recent registrations
-      const { data: registrations } = await supabase
-        .from('business_registrations')
-        .select('id, business_name, full_name, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5);
 
-      // Get recent applications
-      const { data: applications } = await supabase
-        .from('program_applications')
-        .select(`
-          id, status, submitted_at,
-          programs(name),
-          profiles!program_applications_applicant_id_fkey(full_name)
-        `)
-        .order('submitted_at', { ascending: false })
-        .limit(5);
-
-      const activities = [
-        ...(registrations || []).map(reg => ({
-          id: `reg-${reg.id}`,
-          type: 'registration',
-          title: 'New business registration',
-          description: `${reg.business_name} by ${reg.full_name}`,
-          timestamp: reg.created_at,
-          status: reg.status
-        })),
-        ...(applications || []).map(app => ({
-          id: `app-${app.id}`,
-          type: 'application',
-          title: 'Program application',
-          description: `${app.profiles?.full_name} applied to ${app.programs?.name}`,
-          timestamp: app.submitted_at,
-          status: app.status
-        }))
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
-
-      setRecentActivity(activities);
-    } catch (error) {
-      console.error('Error loading recent activity:', error);
-    }
-  };
-
-  const loadNotifications = async () => {
-    try {
-      // Get pending items that need admin attention
-      const { data: pendingRegistrations } = await supabase
-        .from('business_registrations')
-        .select('id, business_name, created_at')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
-
-      const { data: pendingApplications } = await supabase
-        .from('program_applications')
-        .select(`
-          id, submitted_at,
-          programs(name),
-          profiles!program_applications_applicant_id_fkey(full_name)
-        `)
-        .eq('status', 'submitted')
-        .order('submitted_at', { ascending: true });
-
-      const notifications = [
-        ...(pendingRegistrations || []).map(reg => ({
-          id: `reg-${reg.id}`,
-          type: 'registration',
-          title: 'Business registration pending review',
-          message: `${reg.business_name} is waiting for approval`,
-          timestamp: reg.created_at,
-          priority: 'medium'
-        })),
-        ...(pendingApplications || []).map(app => ({
-          id: `app-${app.id}`,
-          type: 'application',
-          title: 'Program application pending review',
-          message: `${app.profiles?.full_name} applied to ${app.programs?.name}`,
-          timestamp: app.submitted_at,
-          priority: 'high'
-        }))
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-      setNotifications(notifications);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    }
-  };
 
   const setupRealtimeSubscriptions = () => {
-    // Subscribe to new registrations
-    const registrationSubscription = supabase
-      .channel('admin_registrations')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'business_registrations'
-      }, () => {
-        loadDashboardData();
-      })
-      .subscribe();
-
-    // Subscribe to new applications
-    const applicationSubscription = supabase
-      .channel('admin_applications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'program_applications'
-      }, () => {
-        loadDashboardData();
-      })
-      .subscribe();
-
-    return () => {
-      registrationSubscription.unsubscribe();
-      applicationSubscription.unsubscribe();
-    };
+    const cleanup = setupAdminRealtime(() => {
+      loadDashboardData();
+    });
+    return cleanup;
   };
 
   const tabs = [

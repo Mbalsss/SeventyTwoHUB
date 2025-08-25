@@ -7,7 +7,7 @@ import MetricCard from '../components/MetricCard';
 import QuickActions from '../components/QuickActions';
 import RecentActivity from '../components/RecentActivity';
 import DailyTip from '../components/DailyTip';
-import GamificationPanel from '../components/GamificationPanel.tsx';
+import GamificationPanel from '../features/dashboard/components/GamificationPanel.tsx';
 import Chatbot from '../components/Chatbot';
 
 
@@ -115,9 +115,12 @@ const Dashboard: React.FC = () => {
       yourProgress: "Inqubekelaphambili Yakho",
       quickActions: "Izenzo Ezisheshayo"
     }
-  };
+  } as const;
 
-  const t = translations[selectedLanguage] || translations.en;
+  type AvailableLang = keyof typeof translations;
+  const isAvailableLang = (lang: string): lang is AvailableLang => lang in translations;
+
+  const t = translations[isAvailableLang(selectedLanguage) ? selectedLanguage : 'en'];
 
   const metrics = [
     {

@@ -1,14 +1,16 @@
+// src/pages/admin/ProgramManagement.tsx
+
+
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Eye, Users, Calendar, FileText, BarChart3, Download, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Eye, Users,  FileText, BarChart3, Download, ExternalLink, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient';
+import { getProgramsWithRelationCounts, createProgram as libCreateProgram, generateApplicationLink as libGenerateApplicationLink, exportApplicationsCSV } from '../../lib/programManagement';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminProgramManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [programs, setPrograms] = useState<any[]>([]);
-  const [selectedProgram, setSelectedProgram] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('programs');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,16 +22,7 @@ const AdminProgramManagement: React.FC = () => {
   const loadPrograms = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('programs')
-        .select(`
-          *,
-          program_applications(count),
-          program_enrollments(count)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getProgramsWithRelationCounts();
       setPrograms(data || []);
     } catch (error) {
       console.error('Error loading programs:', error);
@@ -40,20 +33,8 @@ const AdminProgramManagement: React.FC = () => {
 
   const generateApplicationLink = async (programId: string) => {
     try {
-      const { data, error } = await supabase.rpc('generate_application_link');
-      if (error) throw error;
-
-      const linkId = data;
-      
-      // Update program with the generated link
-      await supabase
-        .from('programs')
-        .update({ application_link_id: linkId })
-        .eq('id', programId);
-
-      // Reload programs to show updated link
-      loadPrograms();
-      
+      const linkId = await libGenerateApplicationLink(programId);
+      await loadPrograms();
       const fullLink = `${window.location.origin}/apply/${linkId}`;
       navigator.clipboard.writeText(fullLink);
       alert(`Application link generated and copied to clipboard:\n${fullLink}`);
@@ -66,47 +47,8 @@ const AdminProgramManagement: React.FC = () => {
   const createProgram = async (formData: any) => {
     try {
       if (!user) return;
-
-      const { data, error } = await supabase
-        .from('programs')
-        .insert({
-          ...formData,
-          created_by: user.id
-        })
-        .select()
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (!data) {
-        throw new Error('Failed to create program');
-      }
-
-      // Create default application form
-      await supabase
-        .from('application_forms')
-        .insert({
-          program_id: data.id,
-          form_config: {
-            title: `${formData.name} Application`,
-            description: `Apply for the ${formData.name} program`,
-            fields: [
-              { id: 'full_name', type: 'text', label: 'Full Name', required: true },
-              { id: 'email', type: 'email', label: 'Email Address', required: true },
-              { id: 'mobile_number', type: 'tel', label: 'Mobile Number', required: true },
-              { id: 'business_name', type: 'text', label: 'Business Name', required: true },
-              { id: 'business_category', type: 'select', label: 'Business Category', required: true, options: ['Retail & Trading', 'Food & Beverages', 'Agriculture', 'Manufacturing', 'Services', 'Technology'] },
-              { id: 'business_location', type: 'text', label: 'Business Location', required: true },
-              { id: 'business_type', type: 'select', label: 'Business Type', required: true, options: ['Formal Business', 'Informal Business', 'Startup', 'Cooperative', 'Franchise'] },
-              { id: 'number_of_employees', type: 'select', label: 'Number of Employees', required: true, options: ['1 (Just me)', '2-5', '6-20', '21-50', '50+'] },
-              { id: 'monthly_revenue', type: 'select', label: 'Monthly Revenue', required: true, options: ['R0 - R5,000', 'R5,001 - R20,000', 'R20,001 - R50,000', 'R50,001 - R100,000', 'R100,001 - R500,000', 'R500,000+'] },
-              { id: 'years_in_operation', type: 'text', label: 'Years in Operation', required: true },
-              { id: 'motivation', type: 'textarea', label: 'Why do you want to join this program?', required: true }
-            ]
-          }
-        });
-
-      loadPrograms();
+      await libCreateProgram(user.id, formData);
+      await loadPrograms();
       setShowCreateForm(false);
       alert('Program created successfully!');
     } catch (error) {
@@ -117,33 +59,7 @@ const AdminProgramManagement: React.FC = () => {
 
   const exportApplications = async (programId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('program_applications')
-        .select(`
-          *,
-          profiles(full_name, mobile_number),
-          businesses(business_name, business_category, business_location)
-        `)
-        .eq('program_id', programId);
-
-      if (error) throw error;
-
-      // Convert to CSV
-      const csvContent = [
-        ['Reference Number', 'Applicant Name', 'Email', 'Business Name', 'Category', 'Location', 'Status', 'Submitted Date'],
-        ...data.map(app => [
-          app.reference_number,
-          app.profiles?.full_name || '',
-          app.application_data?.email || '',
-          app.businesses?.business_name || '',
-          app.businesses?.business_category || '',
-          app.businesses?.business_location || '',
-          app.status,
-          new Date(app.submitted_at).toLocaleDateString()
-        ])
-      ].map(row => row.join(',')).join('\n');
-
-      // Download CSV
+      const csvContent = await exportApplicationsCSV(programId);
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
