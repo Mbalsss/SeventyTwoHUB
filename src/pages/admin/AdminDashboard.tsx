@@ -19,6 +19,9 @@ import BusinessRegistrationReview from '../../components/admin/BusinessRegistrat
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import AdminSettings from '../../components/admin/AdminSettings';
 import NotificationCenter from  '../../components/admin/NotificationCenter';
+// Restored: Import for the AdminUserManagement component
+import AdminUserManagement from '../../components/admin/AdminUserManagement';
+
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -55,7 +58,10 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
-    setupRealtimeSubscriptions();
+    // Setup subscriptions and store the cleanup function
+    const cleanup = setupRealtimeSubscriptions();
+    // Return the cleanup function to be called on unmount
+    return cleanup;
   }, []);
 
   const loadDashboardData = async () => {
@@ -92,6 +98,8 @@ const AdminDashboard: React.FC = () => {
   const tabs = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
     { id: 'users', name: 'Users', icon: Users },
+    // Restored: "Admins" tab for managing admin users
+    { id: 'admin-users', name: 'Admins', icon: Shield },
     { id: 'programs', name: 'Programs', icon: FileText },
     { id: 'registrations', name: 'Registrations', icon: Shield },
     { id: 'analytics', name: 'Analytics', icon: TrendingUp },
@@ -102,8 +110,8 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Total Users',
       value: dashboardStats.totalUsers.toLocaleString(),
-      change: `+${dashboardStats.userGrowth}%`,
-      trend: 'up',
+      change: `${dashboardStats.userGrowth >= 0 ? '+' : ''}${dashboardStats.userGrowth}%`,
+      trend: dashboardStats.userGrowth >= 0 ? 'up' : 'down',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
@@ -197,7 +205,7 @@ const AdminDashboard: React.FC = () => {
                         <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                           <Icon className={`w-5 h-5 ${stat.color}`} />
                         </div>
-                        <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                            <span className={`text-sm font-medium ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{stat.change}</span>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</h3>
                       <p className="text-gray-600 text-sm">{stat.title}</p>
@@ -291,6 +299,8 @@ const AdminDashboard: React.FC = () => {
           )}
 
           {activeTab === 'users' && <UserManagement />}
+          {/* Restored: Conditional render for the AdminUserManagement component */}
+          {activeTab === 'admin-users' && <AdminUserManagement />}
           {activeTab === 'programs' && <ProgramManagement />}
           {activeTab === 'registrations' && <BusinessRegistrationReview />}
           {activeTab === 'analytics' && <AdminAnalytics />}

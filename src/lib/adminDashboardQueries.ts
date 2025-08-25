@@ -36,11 +36,10 @@ type ApplicationRow = { id: string; status: string; submitted_at: string; progra
 
 // Fetch and compute high-level dashboard statistics
 export const getDashboardStats = async (): Promise<DashboardStats> => {
-  const [usersResult, programsResult, registrationsResult /*, enrollmentsResult*/] = await Promise.all([
+  const [usersResult, programsResult, registrationsResult] = await Promise.all([
     supabase.from('profiles').select('id, created_at'),
     supabase.from('programs').select('id, status, created_at'),
     supabase.from('business_registrations').select('id, status, created_at'),
-    // supabase.from('program_enrollments').select('id, enrolled_at')
   ]);
 
   const users = (usersResult.data || []) as ProfileRow[];
@@ -63,14 +62,17 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     return date > sixtyDaysAgo && date <= thirtyDaysAgo;
   }).length;
 
-  const userGrowth = previousUsers > 0 ? ((recentUsers - previousUsers) / previousUsers * 100) : 0;
+  // Restored: More robust user growth calculation
+  const userGrowth = previousUsers > 0
+    ? ((recentUsers - previousUsers) / previousUsers * 100)
+    : (recentUsers > 0 ? 100 : 0);
 
   return {
     totalUsers,
     activePrograms,
     pendingRegistrations,
     userGrowth: Math.round(userGrowth * 10) / 10,
-    programGrowth: 12.5, // keep placeholders to match current UI behavior
+    programGrowth: 12.5,
     registrationGrowth: 8.3,
   };
 };
@@ -166,27 +168,35 @@ export const setupAdminRealtime = (onChange: () => void) => {
   const registrationsChannel = supabase
     .channel('admin_registrations')
     .on('postgres_changes', {
-      event: 'INSERT',
+      event: '*', // Listen for INSERT, UPDATE, DELETE
       schema: 'public',
       table: 'business_registrations',
-    }, () => {
-      onChange();
-    })
+    }, onChange)
     .subscribe();
 
   const applicationsChannel = supabase
     .channel('admin_applications')
     .on('postgres_changes', {
-      event: 'INSERT',
+      event: '*', // Listen for INSERT, UPDATE, DELETE
       schema: 'public',
       table: 'program_applications',
-    }, () => {
-      onChange();
-    })
+    }, onChange)
     .subscribe();
 
+  // Add subscription for new users to update stats in real-time
+  const profilesChannel = supabase
+    .channel('admin_profiles')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+        table: 'profiles'
+    }, onChange)
+    .subscribe();
+
+  // Return a cleanup function to unsubscribe from all channels
   return () => {
-    if (registrationsChannel) registrationsChannel.unsubscribe();
-    if (applicationsChannel) applicationsChannel.unsubscribe();
+    supabase.removeChannel(registrationsChannel);
+    supabase.removeChannel(applicationsChannel);
+    supabase.removeChannel(profilesChannel);
   };
 };
