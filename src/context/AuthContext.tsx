@@ -314,6 +314,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('AuthContext - Sign up attempt:', email);
       
+      // Check for existing user first to prevent duplicates
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingUser) {
+        return { user: null, error: { message: 'Email already in use. Please try logging in instead.' } };
+      }
+
       if (!email || !email.includes('@')) {
         return { user: null, error: { message: 'Please enter a valid email address' } };
       }

@@ -11,10 +11,10 @@ interface MetricCardProps {
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, trend, icon: Icon }) => {
   return (
-    <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-surface-light rounded-xl p-3 sm:p-4 shadow-sm border border-primary-300 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2 sm:mb-3">
-        <div className="p-1.5 sm:p-2 bg-primary-50 rounded-lg">
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+        <div className="p-1.5 sm:p-2 bg-background-secondary rounded-lg">
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
         </div>
         <div className={`flex items-center space-x-1 text-xs sm:text-sm ${
           trend === 'up' ? 'text-green-600' : 'text-red-600'
@@ -29,8 +29,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, trend, ic
       </div>
       
       <div>
-        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">{value}</h3>
-        <p className="text-gray-600 text-xs sm:text-sm">{title}</p>
+        <h3 className="text-lg sm:text-xl font-bold text-text-dark mb-1">{value}</h3>
+        <p className="text-text-muted text-xs sm:text-sm">{title}</p>
       </div>
     </div>
   );

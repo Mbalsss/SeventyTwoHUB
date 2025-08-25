@@ -396,16 +396,16 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background-secondary flex items-center justify-center p-4">
         <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <TrendingUp className="w-8 h-8 text-primary-500" />
-            <span className="text-2xl font-bold text-gray-900">SeventyTwo X</span>
+            <span className="text-2xl font-bold text-text-dark">SeventyTwo X</span>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">{formMode === 'login' ? 'Welcome Back' : 'Create Account'}</h1>
-          <p className="text-gray-600">Empowering South African entrepreneurs</p>
+          <h1 className="text-xl font-semibold text-text-dark mb-2">{formMode === 'login' ? 'Welcome Back' : 'Create Account'}</h1>
+          <p className="text-text-muted">Empowering South African entrepreneurs</p>
         </div>
 
         {/* Global Error Display */}
@@ -431,8 +431,8 @@ const Login: React.FC = () => {
         )}
 
         {/* Login Type Toggle */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+        <div className="bg-surface-light rounded-xl shadow-sm border border-primary-300 p-6 mb-6">
+          <div className="flex bg-background-secondary rounded-lg p-1 mb-6">
             <button
               type="button"
               onClick={() => {
@@ -451,8 +451,10 @@ const Login: React.FC = () => {
                 setFormMode('signup');
                 resetForm();
               }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-colors ${
-                formMode === 'signup' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                formMode === 'signup'
+                  ? 'bg-surface-light text-primary-500 shadow-sm' 
+                  : 'text-text-dark'
               }`}
             >
               <span className="font-medium">Sign Up</span>
@@ -460,7 +462,7 @@ const Login: React.FC = () => {
           </div>
 
           {/* User Type Selection */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+          <div className="flex bg-background-secondary rounded-lg p-1 mb-6">
             <button
               type="button"
               onClick={() => {
@@ -468,7 +470,9 @@ const Login: React.FC = () => {
                 setErrors({});
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-colors ${
-                loginType === 'user' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+                loginType === 'user'
+                  ? 'bg-surface-light text-primary-500 shadow-sm' 
+                  : 'text-text-dark'
               }`}
             >
               <Users className="w-4 h-4" />
@@ -481,7 +485,9 @@ const Login: React.FC = () => {
                 setErrors({});
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-colors ${
-                loginType === 'admin' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+                loginType === 'admin'
+                  ? 'bg-surface-light text-primary-500 shadow-sm' 
+                  : 'text-text-dark'
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -491,11 +497,11 @@ const Login: React.FC = () => {
 
           {/* Admin Access Notice */}
           {loginType === 'admin' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div className="bg-background-secondary border border-primary-300 rounded-lg p-3 mb-4">
               <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-blue-600" />
-                <p className="text-blue-800 text-sm">
-                  <strong>Admin Access:</strong> Only authorized administrators can access the admin dashboard.
+                <Shield className="w-4 h-4 text-primary-500" />
+                <p className="text-text-dark text-sm">
+                  <strong className="text-primary-500">Admin Access:</strong> Only authorized administrators can access the admin dashboard.
                 </p>
               </div>
             </div>
@@ -514,8 +520,8 @@ const Login: React.FC = () => {
                       value={formData.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
                       placeholder="Enter your full name"
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                        errors.fullName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      className={`w-full pl-10 pr-4 py-2 bg-surface-light border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-text-dark ${
+                        errors.fullName ? 'border-red-300 bg-red-50' : 'border-primary-300'
                       }`}
                       required
                     />
@@ -534,8 +540,8 @@ const Login: React.FC = () => {
                       value={formData.mobileNumber}
                       onChange={(e) => handleInputChange('mobileNumber', e.target.value)}
                       placeholder="+27 XX XXX XXXX"
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                        errors.mobileNumber ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      className={`w-full pl-10 pr-4 py-2 bg-surface-light border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-text-dark ${
+                        errors.mobileNumber ? 'border-red-300 bg-red-50' : 'border-primary-300'
                       }`}
                     />
                   </div>
@@ -551,14 +557,14 @@ const Login: React.FC = () => {
                 {loginType === 'admin' ? 'Admin Email Address' : 'Email Address'}
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder={loginType === 'admin' ? 'admin@bizboost.co.za' : 'Enter your email'}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full pl-10 pr-4 py-2 bg-surface-light border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-text-dark ${
+                    errors.email ? 'border-red-300 bg-red-50' : 'border-primary-300'
                   }`}
                   autoComplete="username"
                   required
@@ -572,14 +578,14 @@ const Login: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   placeholder="Enter your password"
-                  className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full pl-10 pr-10 py-2 bg-surface-light border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-text-dark ${
+                    errors.password ? 'border-red-300 bg-red-50' : 'border-primary-300'
                   }`}
                   autoComplete="current-password"
                   required
@@ -587,7 +593,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-dark"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -650,16 +656,16 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading || isRateLimited}
-              className={`w-full py-2 rounded-lg font-semibold transition-colors flex items-center justify-center ${
+              className={`w-full py-3 rounded-lg font-bold transition-colors flex items-center justify-center ${
                 isLoading || isRateLimited
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  ? 'bg-text-muted text-text-light cursor-not-allowed'
                   : loginType === 'admin'
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-primary-500 text-white hover:bg-primary-600'
+                  ? 'bg-red-500 text-text-light hover:bg-red-600'
+                  : 'bg-primary-500 text-text-light hover:bg-background-dark'
               }`}
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-text-light border-t-transparent rounded-full animate-spin" />
               ) : isRateLimited ? (
                 'Account Temporarily Locked'
               ) : (
@@ -689,41 +695,6 @@ const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Dev Credentials - Only show for login mode */}
-          {formMode === 'login' && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Development Credentials:</h4>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>
-                  <strong>User:</strong> {devCredentials.user.email} / {devCredentials.user.password}
-                </p>
-                <p>
-                  <strong>Admin:</strong> {devCredentials.admin.email} / {devCredentials.admin.password}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className={`mt-2 text-sm font-medium transition-colors ${
-                  loginType === 'admin' 
-                    ? 'text-red-600 hover:text-red-700' 
-                    : 'text-primary-600 hover:text-primary-700'
-                }`}
-              >
-                🔧 Fill {loginType} credentials (Dev Only)
-              </button>
-              {DEV_BYPASS_ENABLED ? (
-                <p className="mt-2 text-xs text-amber-600">
-                  Dev bypass is <strong>enabled</strong>. Matching dev creds will skip Supabase.
-                </p>
-              ) : (
-                <p className="mt-2 text-xs text-gray-500">
-                  Dev bypass is disabled. All logins go through Supabase.
-                </p>
-              )}
-            </div>
-          )}
-          </div>
 
           {/* Toggle Link */}
           <div className="text-center">
@@ -770,6 +741,7 @@ const Login: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </>
   );
 };

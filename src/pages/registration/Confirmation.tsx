@@ -38,6 +38,11 @@ const Confirmation: React.FC = () => {
 
       // Submit to database
       const result = await submitBusinessRegistration(submissionData);
+      
+      if (!result) {
+        throw new Error('Failed to submit registration');
+      }
+      
       setApplicationNumber(result.reference_number);
       
       // Create program applications for selected programs

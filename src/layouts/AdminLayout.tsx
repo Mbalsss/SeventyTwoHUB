@@ -113,25 +113,25 @@ const AdminLayout: React.FC = () => {
 
       <div className="flex">
         {/* Admin Sidebar */}
-        <nav className="hidden md:block w-64 bg-white shadow-sm h-screen sticky top-16 border-r border-gray-200">
+        <nav className="hidden md:block w-64 bg-surface-light shadow-sm h-screen sticky top-16 border-r border-primary-300">
           <div className="p-6">
             <ul className="space-y-2">
-              {adminNavItems.map(item => {
+              {adminNavItems.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = (location.pathname === '/admin/programs' && item.id === 'programs') || 
                                 (location.pathname === '/admin/dashboard' && activeTab === item.id);
                 return (
-                  <li key={item.path}>
+                  <li key={`admin-nav-${item.id}-${index}`}>
                     <button
                       onClick={() => handleNavigation(item)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-left ${
                         isActive
-                          ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-500'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-primary-500 text-text-light border-r-2 border-background-dark'
+                          : 'text-text-dark hover:bg-background-secondary hover:text-primary-500'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
-                      <span className="font-medium text-sm">{item.label}</span>
+                      <span className="font-semibold text-sm">{item.label}</span>
                     </button>
                   </li>
                 );

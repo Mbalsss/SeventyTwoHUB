@@ -30,9 +30,17 @@ const ProgramDashboard: React.FC = () => {
         .from('programs')
         .select('*')
         .eq('id', programId)
-        .single();
+        .maybeSingle();
 
-      if (programError) throw programError;
+      if (programError) {
+        console.error('Error loading program:', programError);
+        throw programError;
+      }
+      
+      if (!programData) {
+        throw new Error('Program not found');
+      }
+      
       setProgram(programData);
 
       // Load user's enrollment
@@ -41,9 +49,17 @@ const ProgramDashboard: React.FC = () => {
         .select('*')
         .eq('program_id', programId)
         .eq('participant_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (enrollmentError) throw enrollmentError;
+      if (enrollmentError) {
+        console.error('Error loading enrollment:', enrollmentError);
+        throw enrollmentError;
+      }
+      
+      if (!enrollmentData) {
+        throw new Error('You are not enrolled in this program');
+      }
+      
       setEnrollment(enrollmentData);
 
       // Load program events

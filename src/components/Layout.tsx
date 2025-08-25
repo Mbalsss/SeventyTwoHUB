@@ -8,7 +8,7 @@ const Layout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background-accent">
       {/* Desktop Navigation */}
       <div className="hidden md:flex">
         <Navigation />

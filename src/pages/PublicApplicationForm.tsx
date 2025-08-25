@@ -37,9 +37,17 @@ const PublicApplicationForm: React.FC = () => {
         .select('*')
         .eq('program_id', programData.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (formError) throw formError;
+      if (formError) {
+        console.error('Error loading application form:', formError);
+        throw formError;
+      }
+      
+      if (!formData) {
+        throw new Error('No active application form found for this program');
+      }
+      
       setApplicationForm(formData);
 
     } catch (error) {

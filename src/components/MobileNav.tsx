@@ -13,17 +13,17 @@ const MobileNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+    <nav className="fixed bottom-0 left-0 right-0 bg-surface-light border-t border-primary-300 z-40">
       <div className="flex justify-around py-2">
-        {navItems.map((item) => (
+        {navItems.map((item, index) => (
           <NavLink
-            key={item.path}
+            key={`mobile-nav-${item.path}-${index}`}
             to={item.path}
             className={({ isActive }) =>
               `flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-primary-500'
+                  : 'text-text-dark hover:text-primary-500'
               }`
             }
           >

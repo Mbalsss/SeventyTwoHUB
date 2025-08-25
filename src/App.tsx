@@ -12,7 +12,7 @@ import NotFound from "./pages/errors/NotFound";
 // Import public pages directly for faster initial load
 import SplashScreen from "./pages/SplashScreen";
 import WelcomeScreen from "./pages/WelcomeScreen";
-import Login from "./pages/Login";
+import UnifiedLogin from "./pages/UnifiedLogin";
 
 // Lazy load heavy components
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -107,7 +107,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/splash" element={<SplashScreen />} />
               <Route path="/welcome" element={<WelcomeScreen />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<UnifiedLogin />} />
               
               {/* Public Registration Routes */}
               <Route path="/apply/:linkId" element={<PublicApplicationForm />} />

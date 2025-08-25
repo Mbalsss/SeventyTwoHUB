@@ -38,20 +38,20 @@ const RecentActivity: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+    <div className="bg-surface-light rounded-xl p-4 sm:p-6 shadow-sm border border-primary-300">
+      <h3 className="text-base sm:text-lg font-bold text-text-dark mb-4">Recent Activity</h3>
       
       <div className="space-y-4">
         {activities.map((activity, index) => (
           <div key={index} className="flex items-start space-x-3 p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className={`p-1.5 sm:p-2 rounded-lg bg-gray-100 ${activity.color}`}>
-              <activity.icon className="w-3 h-3 sm:w-4 sm:h-4" />
+            <div className={`p-1.5 sm:p-2 rounded-lg bg-background-secondary ${activity.color}`}>
+            className="flex items-start space-x-3 p-2 sm:p-3 rounded-lg hover:bg-background-secondary transition-colors"
             </div>
             
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-gray-900 mb-1 text-sm">{activity.title}</h4>
-              <p className="text-xs sm:text-sm text-gray-600 mb-2">{activity.description}</p>
-              <div className="flex items-center text-xs text-gray-500">
+              <h4 className="font-semibold text-text-dark mb-1 text-sm">{activity.title}</h4>
+              <p className="text-xs sm:text-sm text-text-muted mb-2">{activity.description}</p>
+              <div className="flex items-center text-xs text-text-muted">
                 <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
                 {activity.time}
               </div>
@@ -60,7 +60,7 @@ const RecentActivity: React.FC = () => {
         ))}
       </div>
       
-      <button className="w-full mt-4 py-2 text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors">
+      <button className="w-full mt-4 py-2 text-xs sm:text-sm text-primary-500 hover:text-background-dark font-semibold transition-colors">
         View all activity
       </button>
     </div>
