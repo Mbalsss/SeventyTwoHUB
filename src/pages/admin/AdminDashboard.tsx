@@ -67,7 +67,7 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-
+      
       // Dashboard statistics
       const stats = await getDashboardStats();
       setDashboardStats(stats);
@@ -75,7 +75,7 @@ const AdminDashboard: React.FC = () => {
       // Recent activity
       const activities = await fetchRecentActivity();
       setRecentActivity(activities);
-
+      
       // Notifications
       const notifs = await fetchDashboardNotifications();
       setNotifications(notifs);
@@ -86,11 +86,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-
-
   const setupRealtimeSubscriptions = () => {
     const cleanup = setupAdminRealtime(() => {
-      loadDashboardData();
+        loadDashboardData();
     });
     return cleanup;
   };
