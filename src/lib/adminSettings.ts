@@ -55,6 +55,7 @@ export const updateAdminSettings = async (settings: Partial<AdminSettings>): Pro
     }
 
     // Remove read-only fields from update
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, created_at, updated_at, ...updateData } = settings;
 
     const { data, error } = await supabase
@@ -198,4 +199,15 @@ export const subscribeToAdminSettings = (callback: (settings: AdminSettings | nu
       }
     )
     .subscribe();
+};
+
+/**
+ * Test Supabase connection by performing a lightweight query
+ */
+export const testSupabaseConnection = async (): Promise<void> => {
+  const { error } = await supabase
+    .from('profiles')
+    .select('count')
+    .limit(1);
+  if (error) throw error;
 };

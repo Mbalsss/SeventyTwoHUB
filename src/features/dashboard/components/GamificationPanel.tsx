@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Star, Trophy, Zap, Target, TrendingUp } from 'lucide-react';
+import { Award, Star, Trophy, Zap,  TrendingUp } from 'lucide-react';
 
 const GamificationPanel: React.FC = () => {
   const userStats = {

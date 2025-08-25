@@ -1,48 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, 
-  Filter, 
+  Search,
   MoreVertical, 
-  Edit, 
-  Trash2, 
-  Shield, 
-  User,
+  Edit,
   Users,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  CheckCircle,
-  XCircle,
   AlertTriangle
 } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
-import { useAuth } from '../../context/AuthContext';
-
-interface UserProfile {
-  id: string;
-  full_name: string;
-  email?: string;
-  mobile_number?: string;
-  created_at: string;
-  updated_at: string;
-  roles: string[];
-  business?: {
-    business_name: string;
-    business_category: string;
-    business_location: string;
-  };
-  status: 'active' | 'inactive' | 'suspended';
-}
+import { getUsersWithBusinessAndRoles, bulkActivateProfiles, bulkDeactivateProfiles, bulkDeleteProfiles, type UserProfile } from '../../lib/userManagement';
 
 const UserManagement: React.FC = () => {
-  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
+  type SortField = 'created_at' | 'updated_at' | 'full_name';
+  const [sortBy, setSortBy] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -64,34 +37,7 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Load users with their profiles, roles, and businesses using proper RLS
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles(role),
-          businesses(business_name, business_category, business_location)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      // Create user profiles without admin API calls
-      const combinedUsers: UserProfile[] = (profiles || []).map(profile => {
-        return {
-          id: profile.id,
-          full_name: profile.full_name,
-          email: 'Email hidden for privacy',
-          mobile_number: profile.mobile_number,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-          roles: profile.user_roles?.map((r: any) => r.role) || [],
-          business: profile.businesses?.[0] || null,
-          status: 'active' // Default status - in production, track this in profiles table
-        };
-      });
-
+      const combinedUsers = await getUsersWithBusinessAndRoles();
       setUsers(combinedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -125,23 +71,24 @@ const UserManagement: React.FC = () => {
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aValue: any = a[sortBy as keyof UserProfile];
-      let bValue: any = b[sortBy as keyof UserProfile];
+      // All sortable fields are strings on UserProfile; dates are ISO strings.
+      let aValue: string | number = a[sortBy];
+      let bValue: string | number = b[sortBy];
 
       if (sortBy === 'created_at' || sortBy === 'updated_at') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      }
-
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
+        // Compare by time for date fields
+        aValue = new Date(aValue as string).getTime();
+        bValue = new Date(bValue as string).getTime();
+      } else {
+        // String comparison (case-insensitive) for full_name
+        aValue = (aValue as string).toLowerCase();
+        bValue = (bValue as string).toLowerCase();
       }
 
       if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 
@@ -181,32 +128,17 @@ const UserManagement: React.FC = () => {
       
       switch (action) {
         case 'activate':
-          // Update user status in profiles table
-          const { error: activateError } = await supabase
-            .from('profiles')
-            .update({ updated_at: new Date().toISOString() })
-            .in('id', selectedUsers);
-          if (activateError) throw activateError;
+          await bulkActivateProfiles(selectedUsers);
           break;
         case 'deactivate':
-          // Update user status in profiles table
-          const { error: deactivateError } = await supabase
-            .from('profiles')
-            .update({ updated_at: new Date().toISOString() })
-            .in('id', selectedUsers);
-          if (deactivateError) throw deactivateError;
+          await bulkDeactivateProfiles(selectedUsers);
           break;
         case 'assign-role':
           // This would show a role assignment modal
           alert('Role assignment modal would open here');
           break;
         case 'delete':
-          // Delete user profiles (this will cascade due to foreign keys)
-          const { error: deleteError } = await supabase
-            .from('profiles')
-            .delete()
-            .in('id', selectedUsers);
-          if (deleteError) throw deleteError;
+          await bulkDeleteProfiles(selectedUsers);
           break;
       }
       
@@ -297,7 +229,7 @@ const UserManagement: React.FC = () => {
             value={`${sortBy}-${sortOrder}`}
             onChange={(e) => {
               const [field, order] = e.target.value.split('-');
-              setSortBy(field);
+              setSortBy(field as SortField);
               setSortOrder(order as 'asc' | 'desc');
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"

@@ -5,11 +5,7 @@ import { supabase } from '../supabaseClient';
 export { supabase } from '../supabaseClient';
 
 // ---- Helper Functions (unchanged, with minor safety) ----
-export const getCurrentUser = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return data.user ?? null;
-};
+
 
 export const getUserProfile = async (userId: string) => {
   const { data, error } = await supabase
@@ -24,17 +20,6 @@ export const getUserProfile = async (userId: string) => {
   return data || null;
 };
 
-export const getUserRoles = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('*')
-    .eq('user_id', userId);
-  if (error) {
-    console.error('Error fetching user roles:', error);
-    throw error;
-  }
-  return data ?? [];
-};
 
 export const getUserBusiness = async (userId: string) => {
   const { data, error } = await supabase
@@ -49,42 +34,7 @@ export const getUserBusiness = async (userId: string) => {
   return data?.[0] || null;
 };
 
-export const getActivePrograms = async () => {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
-};
 
-export const getProgramByLinkId = async (linkId: string) => {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('application_link_id', linkId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error('Program not found');
-  return data;
-};
-
-export const submitProgramApplication = async (applicationData: {
-  program_id: string;
-  applicant_id: string;
-  business_id: string;
-  application_data: any;
-}) => {
-  const { data, error } = await supabase
-    .from('program_applications')
-    .insert(applicationData)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error('Failed to create application');
-  return data;
-};
 
 export const submitBusinessRegistration = async (registrationData: {
   full_name: string;
@@ -183,31 +133,7 @@ export const uploadRegistrationDocument = async (
   return data;
 };
 
-export const uploadFile = async (bucket: string, path: string, file: File) => {
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file);
-  if (error) throw error;
-  return data;
-};
 
-export const getFileUrl = (bucket: string, path: string) => {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
-};
-
-export const subscribeToTable = (
-  table: string,
-  callback: (payload: any) => void,
-  filter?: string
-) => {
-  return supabase
-    .channel(`${table}_changes`)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table, filter },
-      callback
-    )
-    .subscribe();
-};
 
 export const handleSupabaseError = (error: any) => {
   console.error('Supabase Error:', error);

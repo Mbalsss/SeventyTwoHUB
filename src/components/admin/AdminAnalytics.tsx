@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -18,16 +18,31 @@ import {
   Users, 
   FileText, 
   DollarSign, 
-  Calendar,
   Download,
   RefreshCw
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getUsersSince, getProgramsWithCounts, getRegistrationsSince } from '../../lib/adminAnalytics';
+
+// Types for analytics data to avoid never[] inference
+type TimeSeriesPoint = { date: string; count: number };
+type ProgramStatsItem = { name: string; applications: number; enrollments: number; status?: string };
+type CategoryItem = { name: string; value: number; color: string };
+type RevenueItem = { date: string; revenue: number; subscriptions: number };
+
+type AnalyticsData = {
+  userGrowth: TimeSeriesPoint[];
+  programStats: ProgramStatsItem[];
+  registrationTrends: TimeSeriesPoint[];
+  revenueData: RevenueItem[];
+  topCategories: CategoryItem[];
+};
+
+type TimeRange = '7days' | '30days' | '90days' | '1year';
 
 const AdminAnalytics: React.FC = () => {
-  const [timeRange, setTimeRange] = useState('30days');
+  const [timeRange, setTimeRange] = useState<TimeRange>('30days');
   const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState({
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     userGrowth: [],
     programStats: [],
     registrationTrends: [],
@@ -35,11 +50,9 @@ const AdminAnalytics: React.FC = () => {
     topCategories: []
   });
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
 
-  const loadAnalyticsData = async () => {
+
+  const loadAnalyticsData =useCallback( async () => {
     try {
       setLoading(true);
       
@@ -62,28 +75,12 @@ const AdminAnalytics: React.FC = () => {
           break;
       }
 
-      // Load user growth data
-      const { data: users } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: true });
-
-      // Load program data
-      const { data: programs } = await supabase
-        .from('programs')
-        .select(`
-          *,
-          program_applications(count),
-          program_enrollments(count)
-        `);
-
-      // Load business registrations
-      const { data: registrations } = await supabase
-        .from('business_registrations')
-        .select('created_at, business_category, status')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: true });
+      // Load data via centralized lib queries
+      const [users, programs, registrations] = await Promise.all([
+        getUsersSince(startDate.toISOString()),
+        getProgramsWithCounts(),
+        getRegistrationsSince(startDate.toISOString())
+      ]);
 
       // Process user growth data
       const userGrowthData = processTimeSeriesData(users || [], 'created_at', timeRange);
@@ -118,9 +115,17 @@ const AdminAnalytics: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
 
-  const processTimeSeriesData = (data: any[], dateField: string, range: string) => {
+    useEffect(() => {
+        loadAnalyticsData();
+    }, [loadAnalyticsData]);
+
+  const processTimeSeriesData = <K extends string, T extends Record<K, string>>(
+    data: T[],
+    dateField: K,
+    range: TimeRange
+  ) => {
     const groupedData: { [key: string]: number } = {};
     
     data.forEach(item => {
@@ -148,7 +153,7 @@ const AdminAnalytics: React.FC = () => {
     })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
-  const processCategoryData = (registrations: any[]) => {
+  const processCategoryData = (registrations: Array<{ business_category: string }>) => {
     const categoryCount: { [key: string]: number } = {};
     
     registrations.forEach(reg => {
@@ -228,7 +233,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
           <select
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
+            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="7days">Last 7 days</option>

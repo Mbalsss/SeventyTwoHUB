@@ -1,29 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  Shield, 
-  Bell, 
-  Database, 
-  Mail, 
-  Globe,
-  Save,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Key,
-  Lock
+import {
+    Settings,
+    Shield,
+    Bell,
+    Database,
+    Save,
+    RefreshCw,
+    AlertTriangle,
+    Key, Info
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
 import { 
   getAdminSettings, 
   updateAdminSettings, 
   subscribeToAdminSettings,
+  testSupabaseConnection,
   type AdminSettings as AdminSettingsType 
 } from '../../lib/adminSettings';
 
 const AdminSettings: React.FC = () => {
-  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('general');
   const [settings, setSettings] = useState<AdminSettingsType | null>(null);
   const [saving, setSaving] = useState(false);
@@ -110,8 +104,7 @@ const AdminSettings: React.FC = () => {
     try {
       switch (service) {
         case 'supabase':
-          const { data, error } = await supabase.from('profiles').select('count').limit(1);
-          if (error) throw error;
+          await testSupabaseConnection();
           alert('Supabase connection successful!');
           break;
         case 'email':

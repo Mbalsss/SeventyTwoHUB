@@ -7,11 +7,11 @@ interface AdminMobileNavProps {
   notificationCount: number;
 }
 
-const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
-                                                         activeTab,
-                                                         onTabChange,
-                                                         notificationCount
-                                                       }) => {
+const AdminMobileNav: React.FC<AdminMobileNavProps> = ({ 
+  activeTab, 
+  onTabChange, 
+  notificationCount 
+}) => {
   const navItems = [
     { id: 'overview', icon: BarChart3, label: 'Overview' },
     { id: 'users', icon: Users, label: 'Users' },
