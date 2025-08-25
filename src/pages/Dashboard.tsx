@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
 
   const translations = {
     en: {
-      welcome: "Welcome to BizBoost Hub",
+      welcome: "Welcome to SeventyTwo X",
       subtitle: "Empowering South African entrepreneurs to build thriving businesses",
       monthlyRevenue: "Monthly Revenue",
       activeCustomers: "Active Customers",
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
       quickActions: "Quick Actions"
     },
     af: {
-      welcome: "Welkom by BizBoost Hub",
+      welcome: "Welkom by SeventyTwo X",
       subtitle: "Bemagtiging van Suid-Afrikaanse entrepreneurs om florerende besighede te bou",
       monthlyRevenue: "Maandelikse Inkomste",
       activeCustomers: "Aktiewe Kliënte",
@@ -105,7 +105,7 @@ const Dashboard: React.FC = () => {
       quickActions: "Vinnige Aksies"
     },
     zu: {
-      welcome: "Siyakwamukela ku-BizBoost Hub",
+      welcome: "Siyakwamukela ku-SeventyTwo X",
       subtitle: "Sinikeza amandla osomabhizinisi baseNingizimu Afrika ukuthi bakhe amabhizinisi aphumelelayo",
       monthlyRevenue: "Imali Yenyanga",
       activeCustomers: "Amakhasimende Asebenzayo",
@@ -215,22 +215,22 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-4 sm:p-6 text-white">
+      <div className="bg-background-primary rounded-xl p-4 sm:p-6 text-text-light">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
           {getGreeting()}, {getUserDisplayName()}! 🚀
         </h1>
         <h2 className="text-lg sm:text-xl font-semibold mb-2">{t.welcome}</h2>
-        <p className="text-primary-100 mb-4 text-sm sm:text-base">
+        <p className="text-text-light opacity-90 mb-4 text-sm sm:text-base">
           {t.subtitle}
         </p>
         {userBusiness && (
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 mt-4">
-            <p className="text-sm text-primary-100">
+          <div className="bg-background-dark bg-opacity-20 rounded-lg p-3 mt-4">
+            <p className="text-sm text-text-light opacity-80">
               <span className="font-medium">{userBusiness.business_name}</span> • {userBusiness.business_category}
             </p>
           </div>
         )}
-        <div className="text-sm text-primary-200">
+        <div className="text-sm text-text-light opacity-75">
           {currentTime.toLocaleDateString('en-ZA', { 
             weekday: 'long', 
             year: 'numeric', 

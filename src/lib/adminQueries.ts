@@ -167,9 +167,10 @@ export const updateProgramStatus = async (programId: string, status: string) => 
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', programId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Program not found');
   return data;
 };
 
@@ -220,9 +221,10 @@ export const updateApplicationStatus = async (
     })
     .eq('id', applicationId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Application not found');
 
   // If approved, create enrollment
   if (status === 'approved') {
@@ -282,9 +284,10 @@ export const updateBusinessRegistrationStatus = async (
     })
     .eq('id', registrationId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Registration not found');
 
   // If approved, create user account and business record
   if (status === 'approved') {

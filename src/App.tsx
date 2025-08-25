@@ -12,7 +12,7 @@ import NotFound from "./pages/errors/NotFound";
 // Import public pages directly for faster initial load
 import SplashScreen from "./pages/SplashScreen";
 import WelcomeScreen from "./pages/WelcomeScreen";
-import Login from "./pages/Login";
+import UnifiedLogin from "./pages/UnifiedLogin";
 
 // Lazy load heavy components
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -39,7 +39,6 @@ const ProgramManagement = React.lazy(() => import("./pages/admin/ProgramManageme
 const PublicApplicationForm = React.lazy(() => import("./pages/PublicApplicationForm"));
 const CreateAccount = React.lazy(() => import("./pages/registration/CreateAccount"));
 const BusinessInformation = React.lazy(() => import("./pages/registration/BusinessInformation"));
-const SupportingDocuments = React.lazy(() => import("./pages/registration/SupportingDocuments"));
 const ApplicationType = React.lazy(() => import("./pages/registration/ApplicationType"));
 const Confirmation = React.lazy(() => import("./pages/registration/Confirmation"));
 
@@ -108,13 +107,12 @@ function App() {
               {/* Public Routes */}
               <Route path="/splash" element={<SplashScreen />} />
               <Route path="/welcome" element={<WelcomeScreen />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<UnifiedLogin />} />
               
               {/* Public Registration Routes */}
               <Route path="/apply/:linkId" element={<PublicApplicationForm />} />
               <Route path="/register/account" element={<CreateAccount />} />
               <Route path="/register/business" element={<BusinessInformation />} />
-              <Route path="/register/documents" element={<SupportingDocuments />} />
               <Route path="/register/application-type" element={<ApplicationType />} />
               <Route path="/register/confirmation" element={<Confirmation />} />
 

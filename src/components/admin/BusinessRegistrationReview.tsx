@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
-  ChevronDown,
   Eye, 
   CheckCircle, 
   XCircle, 
@@ -17,8 +16,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { supabase, getBusinessRegistrations, updateRegistrationStatus } from '../../lib/supabase';
-
-// ... (interface definition remains the same)
 
 interface BusinessRegistration {
   id: string;
@@ -44,40 +41,15 @@ interface BusinessRegistration {
   documents?: any[];
 }
 
-
 const BusinessRegistrationReview: React.FC = () => {
   const [registrations, setRegistrations] = useState<BusinessRegistration[]>([]);
   const [filteredRegistrations, setFilteredRegistrations] = useState<BusinessRegistration[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
-
   const [selectedRegistration, setSelectedRegistration] = useState<BusinessRegistration | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [loading, setLoading] = useState(true);
-
-  const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'under_review', label: 'Under Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'requires_documents', label: 'Requires Documents' },
-  ];
-
-  // Effect to handle clicks outside the filter dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
 
   useEffect(() => {
     loadRegistrations();
@@ -93,6 +65,7 @@ const BusinessRegistrationReview: React.FC = () => {
       
       const data = await getBusinessRegistrations();
       
+      // Load documents for each registration
       const registrationsWithDocs = await Promise.all(
         data.map(async (registration) => {
           const { data: documents } = await supabase
@@ -119,12 +92,11 @@ const BusinessRegistrationReview: React.FC = () => {
     let filtered = [...registrations];
 
     if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(reg =>
-        reg.business_name.toLowerCase().includes(lowercasedTerm) ||
-        reg.full_name.toLowerCase().includes(lowercasedTerm) ||
-        reg.email.toLowerCase().includes(lowercasedTerm) ||
-        reg.reference_number.toLowerCase().includes(lowercasedTerm)
+        reg.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reg.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reg.reference_number.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -199,11 +171,6 @@ const BusinessRegistrationReview: React.FC = () => {
     }
   };
 
-  const handleFilterSelect = (status: string) => {
-    setSelectedStatus(status);
-    setIsFilterOpen(false);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -240,59 +207,41 @@ const BusinessRegistrationReview: React.FC = () => {
 
       {/* Search and Filters */}
       <div className="bg-gray-50 rounded-xl p-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="relative flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, business, email, or reference..."
+              placeholder="Search registrations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
           
-          <div ref={filterRef} className="relative w-full md:w-auto">
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="w-full md:w-auto flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 space-x-2"
-            >
-              <Filter className="w-4 h-4 text-gray-600" />
-              <span className="text-gray-700">Filter by Status</span>
-              {selectedStatus !== 'all' && (
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              )}
-            </button>
-            {isFilterOpen && (
-              <div className="absolute top-full mt-2 w-full md:w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <ul className="py-1">
-                  {statusOptions.map(option => (
-                     <li key={option.value}>
-                       <button
-                         onClick={() => handleFilterSelect(option.value)}
-                         className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
-                           selectedStatus === option.value 
-                             ? 'bg-blue-50 text-blue-600' 
-                             : 'text-gray-700 hover:bg-gray-100'
-                         }`}
-                       >
-                         {option.label}
-                         {selectedStatus === option.value && (
-                           <CheckCircle className="w-4 h-4 text-blue-500" />
-                         )}
-                       </button>
-                     </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="under_review">Under Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="requires_documents">Requires Documents</option>
+          </select>
+          
+          <button
+            onClick={() => setSelectedStatus('pending')}
+            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+          >
+            Show Pending Only
+          </button>
         </div>
       </div>
-      
-      {/* ... (rest of the component JSX remains the same) ... */}
 
-       {/* Registrations List */}
+      {/* Registrations List */}
       <div className="space-y-4">
         {filteredRegistrations.map(registration => (
           <div key={registration.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
@@ -300,35 +249,35 @@ const BusinessRegistrationReview: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
                   <h3 className="font-semibold text-gray-900">{registration.business_name}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full inline-flex items-center ${getStatusColor(registration.status)}`}>
+                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(registration.status)}`}>
                     {getStatusIcon(registration.status)}
-                    <span className="ml-1.5">{registration.status.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span className="ml-1">{registration.status.replace('_', ' ').toUpperCase()}</span>
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center space-x-2 truncate">
-                    <User className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{registration.full_name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 truncate">
-                    <Mail className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{registration.email}</span>
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4" />
+                    <span>{registration.full_name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4 flex-shrink-0" />
-                    <span>{registration.mobile_number || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 truncate">
-                    <Building className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{registration.business_category}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 truncate">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{registration.business_location}</span>
+                    <Mail className="w-4 h-4" />
+                    <span>{registration.email}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    <Phone className="w-4 h-4" />
+                    <span>{registration.mobile_number || 'Not provided'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Building className="w-4 h-4" />
+                    <span>{registration.business_category}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{registration.business_location}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <FileText className="w-4 h-4" />
                     <span>{registration.documents?.length || 0} documents</span>
                   </div>
                 </div>
@@ -342,20 +291,72 @@ const BusinessRegistrationReview: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex space-x-2 ml-4">
+              <div className="flex space-x-2">
                 <button
                   onClick={() => {
                     setSelectedRegistration(registration);
-                    setReviewNotes(registration.review_notes || '');
                     setShowReviewModal(true);
                   }}
-                  className="px-3 py-1 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm flex items-center space-x-1.5"
+                  className="px-3 py-1 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm flex items-center space-x-1"
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-3 h-3" />
                   <span>Review</span>
                 </button>
+                
+                {registration.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate(registration.id, 'approved')}
+                      className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center space-x-1"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Approve</span>
+                    </button>
+                    <button
+                      onClick={() => handleStatusUpdate(registration.id, 'rejected', 'Application rejected')}
+                      className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center space-x-1"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      <span>Reject</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
+
+            {/* Quick Info */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">Type:</span>
+                <span className="ml-1 text-gray-600">{registration.business_type}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Employees:</span>
+                <span className="ml-1 text-gray-600">{registration.number_of_employees}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Revenue:</span>
+                <span className="ml-1 text-gray-600">{registration.monthly_revenue}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Experience:</span>
+                <span className="ml-1 text-gray-600">{registration.years_in_operation} years</span>
+              </div>
+            </div>
+
+            {/* Selected Services */}
+            {registration.selected_services.length > 0 && (
+              <div className="mt-4">
+                <span className="text-sm font-medium text-gray-700">Selected Services:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {registration.selected_services.map((service, index) => (
+                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -365,41 +366,114 @@ const BusinessRegistrationReview: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Review: {selectedRegistration.business_name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Review Registration</h3>
               <button
                 onClick={() => setShowReviewModal(false)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
-                <XCircle className="w-6 h-6" />
+                ×
               </button>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-6">
+              {/* Registration Details */}
+              <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-gray-800 mb-3 border-b pb-2">Business Information</h4>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Name:</span> <span className="text-gray-800 text-right">{selectedRegistration.business_name}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Category:</span> <span className="text-gray-800 text-right">{selectedRegistration.business_category}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Location:</span> <span className="text-gray-800 text-right">{selectedRegistration.business_location}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Type:</span> <span className="text-gray-800 text-right">{selectedRegistration.business_type}</span></div>
+                  <h4 className="font-medium text-gray-900 mb-3">Business Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Business Name</label>
+                      <p className="text-gray-900">{selectedRegistration.business_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Category</label>
+                      <p className="text-gray-900">{selectedRegistration.business_category}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Location</label>
+                      <p className="text-gray-900">{selectedRegistration.business_location}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Type</label>
+                      <p className="text-gray-900">{selectedRegistration.business_type}</p>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-800 mb-3 border-b pb-2">Owner Information</h4>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Full Name:</span> <span className="text-gray-800 text-right">{selectedRegistration.full_name}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Email:</span> <span className="text-gray-800 text-right">{selectedRegistration.email}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Mobile:</span> <span className="text-gray-800 text-right">{selectedRegistration.mobile_number || 'N/A'}</span></div>
+                  <h4 className="font-medium text-gray-900 mb-3">Owner Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                      <p className="text-gray-900">{selectedRegistration.full_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-gray-900">{selectedRegistration.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Mobile</label>
+                      <p className="text-gray-900">{selectedRegistration.mobile_number || 'Not provided'}</p>
+                    </div>
                   </div>
                 </div>
-                
-                 {/* Selected Services */}
+              </div>
+
+              {/* Business Metrics & Documents */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Business Metrics</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Employees</label>
+                      <p className="text-gray-900">{selectedRegistration.number_of_employees}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Monthly Revenue</label>
+                      <p className="text-gray-900">{selectedRegistration.monthly_revenue}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Years in Operation</label>
+                      <p className="text-gray-900">{selectedRegistration.years_in_operation}</p>
+                    </div>
+                    {selectedRegistration.beee_level && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">BEEE Level</label>
+                        <p className="text-gray-900">Level {selectedRegistration.beee_level}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Documents */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Uploaded Documents</h4>
+                  {selectedRegistration.documents && selectedRegistration.documents.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedRegistration.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-gray-600" />
+                            <span className="text-sm text-gray-900">{doc.document_type}</span>
+                          </div>
+                          <button
+                            onClick={() => window.open(doc.file_url, '_blank')}
+                            className="text-primary-600 hover:text-primary-700 text-sm"
+                          >
+                            View
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">No documents uploaded</p>
+                  )}
+                </div>
+
+                {/* Selected Services */}
                 {selectedRegistration.selected_services.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-800 mb-3 border-b pb-2">Selected Services</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">Selected Services</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedRegistration.selected_services.map((service, index) => (
                         <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -409,63 +483,20 @@ const BusinessRegistrationReview: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium text-gray-800 mb-3 border-b pb-2">Business Metrics</h4>
-                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Employees:</span> <span className="text-gray-800 text-right">{selectedRegistration.number_of_employees}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Monthly Revenue:</span> <span className="text-gray-800 text-right">{selectedRegistration.monthly_revenue}</span></div>
-                    <div className="flex justify-between"><span className="font-medium text-gray-600">Years in Operation:</span> <span className="text-gray-800 text-right">{selectedRegistration.years_in_operation}</span></div>
-                    {selectedRegistration.beee_level && (
-                      <div className="flex justify-between"><span className="font-medium text-gray-600">B-BBEE Level:</span> <span className="text-gray-800 text-right">Level {selectedRegistration.beee_level}</span></div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Documents */}
-                <div>
-                  <h4 className="font-medium text-gray-800 mb-3 border-b pb-2">Uploaded Documents</h4>
-                  {selectedRegistration.documents && selectedRegistration.documents.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedRegistration.documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <FileText className="w-4 h-4 text-gray-600" />
-                            <span className="text-sm text-gray-900">{doc.document_type}</span>
-                          </div>
-                          <a
-                            href={doc.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                          >
-                            View
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">No documents uploaded.</p>
-                  )}
-                </div>
               </div>
             </div>
 
             {/* Description */}
             {selectedRegistration.description && (
               <div className="mt-6">
-                <h4 className="font-medium text-gray-800 mb-2 border-b pb-2">Description</h4>
-                <p className="text-gray-700 bg-gray-50 rounded-lg p-3 text-sm">{selectedRegistration.description}</p>
+                <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                <p className="text-gray-700 bg-gray-50 rounded-lg p-3">{selectedRegistration.description}</p>
               </div>
             )}
 
             {/* Review Notes */}
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Review Notes (for internal use)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Review Notes</label>
               <textarea
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
@@ -476,11 +507,33 @@ const BusinessRegistrationReview: React.FC = () => {
             </div>
 
             {/* Actions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-4 border-t border-gray-200">
-              <button onClick={() => handleStatusUpdate(selectedRegistration.id, 'approved', reviewNotes)} className="py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"><CheckCircle className="w-4 h-4" /><span>Approve</span></button>
-              <button onClick={() => handleStatusUpdate(selectedRegistration.id, 'under_review', reviewNotes)} className="py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Set to Review</button>
-              <button onClick={() => handleStatusUpdate(selectedRegistration.id, 'requires_documents', reviewNotes)} className="py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">Need Docs</button>
-              <button onClick={() => handleStatusUpdate(selectedRegistration.id, 'rejected', reviewNotes || 'Application rejected')} className="py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"><XCircle className="w-4 h-4" /><span>Reject</span></button>
+            <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => handleStatusUpdate(selectedRegistration.id, 'approved', reviewNotes)}
+                className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center space-x-1"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Approve</span>
+              </button>
+              <button
+                onClick={() => handleStatusUpdate(selectedRegistration.id, 'under_review', reviewNotes)}
+                className="flex-1 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Under Review
+              </button>
+              <button
+                onClick={() => handleStatusUpdate(selectedRegistration.id, 'requires_documents', reviewNotes)}
+                className="flex-1 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+              >
+                Need Docs
+              </button>
+              <button
+                onClick={() => handleStatusUpdate(selectedRegistration.id, 'rejected', reviewNotes || 'Application rejected')}
+                className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Reject</span>
+              </button>
             </div>
           </div>
         </div>
@@ -494,10 +547,10 @@ const BusinessRegistrationReview: React.FC = () => {
       )}
 
       {!loading && filteredRegistrations.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+        <div className="text-center py-12">
           <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Registrations Found</h3>
-          <p className="text-gray-600">No applications match your current search and filter criteria.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No registrations found</h3>
+          <p className="text-gray-600">Business registration applications will appear here.</p>
         </div>
       )}
     </div>

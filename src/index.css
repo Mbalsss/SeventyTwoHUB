@@ -12,8 +12,8 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: #f3f4f6;
+  color: #030712;
   line-height: 1.6;
 }
 
@@ -23,16 +23,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #cbd5e1;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #334155;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #030712;
 }
 
 /* Mobile-first responsive design */
@@ -82,6 +82,56 @@ body {
 button:focus,
 input:focus,
 textarea:focus {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid #334155;
   outline-offset: 2px;
+}
+
+/* Global button styles */
+.btn-primary {
+  background-color: #334155;
+  color: #f3f4f6;
+  border: none;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: #030712;
+  color: #f3f4f6;
+}
+
+/* Global input styles */
+.input-primary {
+  background-color: #f3f4f6;
+  color: #030712;
+  border: 1px solid #cbd5e1;
+}
+
+.input-primary:focus {
+  border-color: #334155;
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.1);
+}
+
+/* Global card styles */
+.card-primary {
+  background-color: #f3f4f6;
+  color: #030712;
+  border: 1px solid #cbd5e1;
+}
+
+/* Text contrast utilities */
+.text-on-primary {
+  color: #f3f4f6;
+}
+
+.text-on-secondary {
+  color: #030712;
+}
+
+.text-on-accent {
+  color: #030712;
+}
+
+.text-on-dark {
+  color: #f3f4f6;
 }

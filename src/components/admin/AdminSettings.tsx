@@ -15,40 +15,21 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { 
+  getAdminSettings, 
+  updateAdminSettings, 
+  subscribeToAdminSettings,
+  type AdminSettings as AdminSettingsType 
+} from '../../lib/adminSettings';
 
 const AdminSettings: React.FC = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('general');
-  const [settings, setSettings] = useState({
-    general: {
-      platformName: 'BizBoost Hub',
-      platformDescription: 'Empowering South African entrepreneurs',
-      maintenanceMode: false,
-      registrationEnabled: true,
-      defaultLanguage: 'en'
-    },
-    security: {
-      requireEmailVerification: false,
-      sessionTimeout: 24,
-      maxLoginAttempts: 5,
-      passwordMinLength: 6,
-      twoFactorRequired: false
-    },
-    notifications: {
-      emailNotifications: true,
-      adminAlerts: true,
-      systemUpdates: true,
-      marketingEmails: false
-    },
-    integrations: {
-      supabaseConnected: true,
-      emailServiceConnected: false,
-      analyticsConnected: false,
-      paymentGatewayConnected: false
-    }
-  });
+  const [settings, setSettings] = useState<AdminSettingsType | null>(null);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const sections = [
     { id: 'general', name: 'General', icon: Settings },
@@ -60,48 +41,69 @@ const AdminSettings: React.FC = () => {
 
   useEffect(() => {
     loadSettings();
+    
+    // Subscribe to real-time settings changes
+    const subscription = subscribeToAdminSettings((updatedSettings) => {
+      if (updatedSettings) {
+        setSettings(updatedSettings);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadSettings = async () => {
     try {
-      // Load settings from database or localStorage
-      const savedSettings = localStorage.getItem('adminSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+      setLoading(true);
+      setError(null);
+      
+      const adminSettings = await getAdminSettings();
+      
+      if (adminSettings) {
+        setSettings(adminSettings);
+      } else {
+        setError('No admin settings found. Please contact support.');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      setError('Failed to load admin settings. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const saveSettings = async () => {
     try {
+      if (!settings) {
+        throw new Error('No settings to save');
+      }
+      
       setSaving(true);
+      setError(null);
       
-      // Save to localStorage (in production, save to database)
-      localStorage.setItem('adminSettings', JSON.stringify(settings));
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const updatedSettings = await updateAdminSettings(settings);
+      setSettings(updatedSettings);
       
       setLastSaved(new Date());
       alert('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Error saving settings');
+      setError('Failed to save settings. Please try again.');
+      alert('Error saving settings. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const updateSetting = (section: string, key: string, value: any) => {
-    setSettings(prev => ({
+  const updateSetting = (key: keyof AdminSettingsType, value: any) => {
+    if (!settings) return;
+    
+    setSettings(prev => prev ? ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: value
-      }
-    }));
+      [key]: value
+    }) : null);
   };
 
   const testConnection = async (service: string) => {
@@ -124,6 +126,40 @@ const AdminSettings: React.FC = () => {
       alert(`Error testing ${service} connection`);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading admin settings...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+        <div className="flex items-center space-x-2">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
+          <p className="text-red-800">{error}</p>
+        </div>
+        <button
+          onClick={loadSettings}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">No settings available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -193,8 +229,8 @@ const AdminSettings: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Platform Name</label>
                     <input
                       type="text"
-                      value={settings.general.platformName}
-                      onChange={(e) => updateSetting('general', 'platformName', e.target.value)}
+                      value={settings.platform_name}
+                      onChange={(e) => updateSetting('platform_name', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
@@ -202,8 +238,8 @@ const AdminSettings: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
                     <select
-                      value={settings.general.defaultLanguage}
-                      onChange={(e) => updateSetting('general', 'defaultLanguage', e.target.value)}
+                      value={settings.default_language}
+                      onChange={(e) => updateSetting('default_language', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       <option value="en">English</option>
@@ -217,8 +253,8 @@ const AdminSettings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Platform Description</label>
                   <textarea
-                    value={settings.general.platformDescription}
-                    onChange={(e) => updateSetting('general', 'platformDescription', e.target.value)}
+                    value={settings.platform_description}
+                    onChange={(e) => updateSetting('platform_description', e.target.value)}
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
@@ -228,8 +264,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.general.maintenanceMode}
-                      onChange={(e) => updateSetting('general', 'maintenanceMode', e.target.checked)}
+                      checked={settings.maintenance_mode}
+                      onChange={(e) => updateSetting('maintenance_mode', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -241,8 +277,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.general.registrationEnabled}
-                      onChange={(e) => updateSetting('general', 'registrationEnabled', e.target.checked)}
+                      checked={settings.registration_enabled}
+                      onChange={(e) => updateSetting('registration_enabled', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -263,8 +299,8 @@ const AdminSettings: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (hours)</label>
                     <input
                       type="number"
-                      value={settings.security.sessionTimeout}
-                      onChange={(e) => updateSetting('security', 'sessionTimeout', parseInt(e.target.value))}
+                      value={settings.session_timeout_hours}
+                      onChange={(e) => updateSetting('session_timeout_hours', parseInt(e.target.value))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       min="1"
                       max="168"
@@ -275,8 +311,8 @@ const AdminSettings: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Max Login Attempts</label>
                     <input
                       type="number"
-                      value={settings.security.maxLoginAttempts}
-                      onChange={(e) => updateSetting('security', 'maxLoginAttempts', parseInt(e.target.value))}
+                      value={settings.max_login_attempts}
+                      onChange={(e) => updateSetting('max_login_attempts', parseInt(e.target.value))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       min="3"
                       max="10"
@@ -287,8 +323,8 @@ const AdminSettings: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Password Min Length</label>
                     <input
                       type="number"
-                      value={settings.security.passwordMinLength}
-                      onChange={(e) => updateSetting('security', 'passwordMinLength', parseInt(e.target.value))}
+                      value={settings.password_min_length}
+                      onChange={(e) => updateSetting('password_min_length', parseInt(e.target.value))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       min="6"
                       max="20"
@@ -300,8 +336,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.security.requireEmailVerification}
-                      onChange={(e) => updateSetting('security', 'requireEmailVerification', e.target.checked)}
+                      checked={settings.require_email_verification}
+                      onChange={(e) => updateSetting('require_email_verification', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -313,8 +349,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.security.twoFactorRequired}
-                      onChange={(e) => updateSetting('security', 'twoFactorRequired', e.target.checked)}
+                      checked={settings.two_factor_required_for_admins}
+                      onChange={(e) => updateSetting('two_factor_required_for_admins', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -334,8 +370,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.notifications.emailNotifications}
-                      onChange={(e) => updateSetting('notifications', 'emailNotifications', e.target.checked)}
+                      checked={settings.email_notifications_enabled}
+                      onChange={(e) => updateSetting('email_notifications_enabled', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -347,8 +383,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.notifications.adminAlerts}
-                      onChange={(e) => updateSetting('notifications', 'adminAlerts', e.target.checked)}
+                      checked={settings.admin_alerts_enabled}
+                      onChange={(e) => updateSetting('admin_alerts_enabled', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -360,8 +396,8 @@ const AdminSettings: React.FC = () => {
                   <label className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      checked={settings.notifications.systemUpdates}
-                      onChange={(e) => updateSetting('notifications', 'systemUpdates', e.target.checked)}
+                      checked={settings.system_updates_enabled}
+                      onChange={(e) => updateSetting('system_updates_enabled', e.target.checked)}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <div>
@@ -377,29 +413,42 @@ const AdminSettings: React.FC = () => {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900">Service Integrations</h3>
                 
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start space-x-3">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Integration Status</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        These settings show the current status of external service integrations. 
+                        Changes here are for display purposes only and don't affect actual connections.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="space-y-4">
                   {[
                     { 
                       name: 'Supabase Database', 
-                      key: 'supabaseConnected', 
+                      connected: true,
                       description: 'Database and authentication service',
                       testable: true
                     },
                     { 
                       name: 'Email Service', 
-                      key: 'emailServiceConnected', 
+                      connected: false,
                       description: 'Email delivery and notifications',
                       testable: true
                     },
                     { 
                       name: 'Analytics Service', 
-                      key: 'analyticsConnected', 
+                      connected: false,
                       description: 'User behavior and platform analytics',
                       testable: false
                     },
                     { 
                       name: 'Payment Gateway', 
-                      key: 'paymentGatewayConnected', 
+                      connected: false,
                       description: 'Payment processing for premium features',
                       testable: false
                     }
@@ -407,7 +456,7 @@ const AdminSettings: React.FC = () => {
                     <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`w-3 h-3 rounded-full ${
-                          settings.integrations[integration.key] ? 'bg-green-500' : 'bg-red-500'
+                          integration.connected ? 'bg-green-500' : 'bg-red-500'
                         }`} />
                         <div>
                           <div className="font-medium text-gray-900">{integration.name}</div>
@@ -418,22 +467,19 @@ const AdminSettings: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         {integration.testable && (
                           <button
-                            onClick={() => testConnection(integration.key.replace('Connected', ''))}
+                            onClick={() => testConnection(integration.name.toLowerCase().replace(' ', '_'))}
                             className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                           >
                             Test
                           </button>
                         )}
-                        <button
-                          onClick={() => updateSetting('integrations', integration.key, !settings.integrations[integration.key])}
-                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                            settings.integrations[integration.key]
-                              ? 'bg-red-500 text-white hover:bg-red-600'
-                              : 'bg-green-500 text-white hover:bg-green-600'
-                          }`}
-                        >
-                          {settings.integrations[integration.key] ? 'Disconnect' : 'Connect'}
-                        </button>
+                        <span className={`px-3 py-1 rounded-lg text-sm ${
+                          integration.connected
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {integration.connected ? 'Connected' : 'Disconnected'}
+                        </span>
                       </div>
                     </div>
                   ))}

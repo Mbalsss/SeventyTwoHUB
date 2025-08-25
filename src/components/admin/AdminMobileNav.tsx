@@ -25,7 +25,7 @@ const AdminMobileNav: React.FC<AdminMobileNavProps> = ({
       <div className="flex justify-around py-2">
         {navItems.map((item) => (
           <button
-            key={item.id}
+            key={`mobile-nav-${item.id}`}
             onClick={() => onTabChange(item.id)}
             className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors relative ${
               activeTab === item.id

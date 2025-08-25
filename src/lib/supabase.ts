@@ -16,12 +16,12 @@ export const getUserProfile = async (userId: string) => {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   if (error) {
     console.error('Error fetching user profile:', error);
     throw error;
   }
-  return data;
+  return data || null;
 };
 
 export const getUserRoles = async (userId: string) => {
@@ -41,16 +41,12 @@ export const getUserBusiness = async (userId: string) => {
     .from('businesses')
     .select('*')
     .eq('owner_id', userId)
-    .single();
+    .limit(1);
   if (error) {
-    // Don't throw error if no business found, just return null
-    if (error.code === 'PGRST116') {
-      return null;
-    }
     console.error('Error fetching user business:', error);
     throw error;
   }
-  return data;
+  return data?.[0] || null;
 };
 
 export const getActivePrograms = async () => {
@@ -68,8 +64,9 @@ export const getProgramByLinkId = async (linkId: string) => {
     .from('programs')
     .select('*')
     .eq('application_link_id', linkId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error('Program not found');
   return data;
 };
 
@@ -83,8 +80,9 @@ export const submitProgramApplication = async (applicationData: {
     .from('program_applications')
     .insert(applicationData)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error('Failed to create application');
   return data;
 };
 
@@ -107,8 +105,9 @@ export const submitBusinessRegistration = async (registrationData: {
     .from('business_registrations')
     .insert(registrationData)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error('Failed to create registration');
   return data;
 };
 
@@ -144,8 +143,9 @@ export const updateRegistrationStatus = async (
     })
     .eq('id', registrationId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error('Registration not found');
   return data;
 };
 
@@ -176,9 +176,10 @@ export const uploadRegistrationDocument = async (
       mime_type: file.type,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Failed to save document record');
   return data;
 };
 

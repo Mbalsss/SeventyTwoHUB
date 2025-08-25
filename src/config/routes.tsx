@@ -25,7 +25,7 @@ const AdminProgramManagement = lazy(() => import('../pages/admin/ProgramManageme
 // Public pages (no lazy loading needed for critical pages)
 import SplashScreen from '../pages/SplashScreen';
 import WelcomeScreen from '../pages/WelcomeScreen';
-import Login from '../pages/Login';
+import UnifiedLogin from '../pages/UnifiedLogin';
 import PublicApplicationForm from '../pages/PublicApplicationForm';
 import CreateAccount from '../pages/registration/CreateAccount';
 import BusinessInformation from '../pages/registration/BusinessInformation';
@@ -52,7 +52,7 @@ export const publicRoutes: RouteConfig[] = [
   },
   {
     path: '/login',
-    element: Login,
+    element: UnifiedLogin,
     isPublic: true,
     layout: 'public'
   },
