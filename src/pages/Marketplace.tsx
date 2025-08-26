@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, MapPin, Star, Heart, Share2, Plus, Camera, Tag } from 'lucide-react';
+import { Search, MapPin, Star, Heart, Share2, Plus, Camera, Tag } from 'lucide-react';
 
 const Marketplace: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

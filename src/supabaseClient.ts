@@ -44,7 +44,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 
 // Test connection on initialization (non-blocking)
 supabase.auth.getSession()
-  .then(({ data, error }) => {
+  .then(({ error }) => {
     if (error) {
       console.warn('Supabase connection test failed:', error.message);
     } else {

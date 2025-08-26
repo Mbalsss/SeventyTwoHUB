@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, ExternalLink, Star, Search, Filter, Wrench } from 'lucide-react';
+import { Download, ExternalLink, Star, Search, Wrench } from 'lucide-react';
 
 const Toolkit: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

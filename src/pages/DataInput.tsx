@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, DollarSign, TrendingUp, Calendar, Save, AlertCircle } from 'lucide-react';
+import { Upload, DollarSign, TrendingUp, Save, AlertCircle } from 'lucide-react';
 
 const DataInput: React.FC = () => {
   const [activeTab, setActiveTab] = useState('financial');

@@ -1,112 +1,82 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/ProgramDashboard.tsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calendar, BookOpen, Users, Video, Download, Clock, CheckCircle, Play } from 'lucide-react';
-import { supabase } from "../supabaseClient";
+import { Calendar, BookOpen, Video, Download, Clock, CheckCircle, Play } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import {
+  getProgramDetails,
+  getUserEnrollment,
+  getProgramEvents,
+  getProgramMaterials,
+  markMaterialAsAccessed
+} from '../lib/program.queries';
+import type { ProgramRow, EnrollmentRow, EventRow, MaterialRow } from '../types/programDashboard.types.ts';
 
 const ProgramDashboard: React.FC = () => {
   const { programId } = useParams<{ programId: string }>();
   const { user } = useAuth();
-  const [program, setProgram] = useState<any>(null);
-  const [enrollment, setEnrollment] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [program, setProgram] = useState<ProgramRow | null>(null);
+  const [enrollment, setEnrollment] = useState<EnrollmentRow | null>(null);
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (programId) {
-      loadProgramData();
-    }
-  }, [programId]);
+  const loadProgramData = useCallback(async () => {
+    if (!user || !programId) return;
 
-  const loadProgramData = async () => {
     try {
       setLoading(true);
-      if (!user) return;
 
-      // Load program details
-      const { data: programData, error: programError } = await supabase
-        .from('programs')
-        .select('*')
-        .eq('id', programId)
-        .maybeSingle();
+      // Use query functions to fetch all data in parallel
+      const [programData, enrollmentData, eventsData, materialsData] = await Promise.all([
+        getProgramDetails(programId),
+        getUserEnrollment(programId, user.id),
+        getProgramEvents(programId),
+        getProgramMaterials(programId)
+      ]);
 
-      if (programError) {
-        console.error('Error loading program:', programError);
-        throw programError;
-      }
-      
-      if (!programData) {
-        throw new Error('Program not found');
+      if (!programData || !enrollmentData) {
+        console.warn('Program not found or user is not enrolled.');
+        setProgram(null);
+        setEnrollment(null);
+        return;
       }
       
       setProgram(programData);
-
-      // Load user's enrollment
-      const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from('program_enrollments')
-        .select('*')
-        .eq('program_id', programId)
-        .eq('participant_id', user.id)
-        .maybeSingle();
-
-      if (enrollmentError) {
-        console.error('Error loading enrollment:', enrollmentError);
-        throw enrollmentError;
-      }
-      
-      if (!enrollmentData) {
-        throw new Error('You are not enrolled in this program');
-      }
-      
       setEnrollment(enrollmentData);
-
-      // Load program events
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('program_events')
-        .select('*')
-        .eq('program_id', programId)
-        .order('start_time', { ascending: true });
-
-      if (eventsError) throw eventsError;
-      setEvents(eventsData || []);
-
-      // Load program materials
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('program_materials')
-        .select('*')
-        .eq('program_id', programId)
-        .order('module_number', { ascending: true });
-
-      if (materialsError) throw materialsError;
-      setMaterials(materialsData || []);
+      setEvents(eventsData);
+      setMaterials(materialsData);
 
     } catch (error) {
-      console.error('Error loading program data:', error);
+      console.error('Error loading program dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [programId, user]);
 
-  const markMaterialAsAccessed = async (materialId: string) => {
-    try {
-      const user = await getCurrentUser();
+  useEffect(() => {
+    if (programId) {
+      void loadProgramData();
+    }
+  }, [programId, loadProgramData]);
+
+  const handleMarkMaterialAsAccessed = async (materialId: string) => {
       if (!user) return;
 
-      await supabase
-        .from('material_access')
-        .upsert({
-          material_id: materialId,
-          participant_id: user.id,
-          completion_status: 'viewed'
-        });
+    await markMaterialAsAccessed(materialId, user.id);
 
-      // Refresh materials to update access status
-      loadProgramData();
-    } catch (error) {
-      console.error('Error marking material as accessed:', error);
-    }
+    // For immediate UI feedback, you could update the state here
+    // before reloading all data.
+    setMaterials(prevMaterials =>
+      prevMaterials.map(m =>
+        m.id === materialId ? { ...m, accessed: true } : m
+      )
+    );
+
+    // Optionally, you can still reload all data to ensure consistency
+    // void loadProgramData();
   };
 
   const tabs = [
@@ -132,11 +102,13 @@ const ProgramDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You are not enrolled in this program.</p>
+          <p className="text-gray-600">You are not enrolled in this program or the program does not exist.</p>
         </div>
       </div>
     );
   }
+
+  // --- RENDER LOGIC --- (No changes below this line)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -277,7 +249,7 @@ const ProgramDashboard: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="w-4 h-4" />
-                          <span>{new Date(event.start_time).toLocaleTimeString()} - {new Date(event.end_time).toLocaleTimeString()}</span>
+                          <span>{new Date(event.start_time).toLocaleTimeString()} - {event.end_time && new Date(event.end_time).toLocaleTimeString()}</span>
                         </div>
                       </div>
                       
@@ -342,7 +314,7 @@ const ProgramDashboard: React.FC = () => {
                       {material.file_size && `${Math.round(material.file_size / 1024 / 1024)} MB`}
                     </span>
                     <button
-                      onClick={() => markMaterialAsAccessed(material.id)}
+                      onClick={() => handleMarkMaterialAsAccessed(material.id)}
                       className="flex items-center space-x-1 px-3 py-1 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm"
                     >
                       {material.material_type === 'video' ? (

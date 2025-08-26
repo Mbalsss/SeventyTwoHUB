@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Video, Calendar, Clock, Star, Users, Play, BookOpen, Filter } from 'lucide-react';
+import { Video, Calendar, Clock, Star, Users, Play } from 'lucide-react';
 
 const ExpertSessions: React.FC = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -157,7 +157,7 @@ const ExpertSessions: React.FC = () => {
   ];
 
   const getCategoryColor = (category: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       startup: 'bg-blue-100 text-blue-800',
       marketing: 'bg-green-100 text-green-800',
       finance: 'bg-purple-100 text-purple-800',

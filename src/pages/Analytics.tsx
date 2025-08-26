@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Users, Calendar } from 'lucide-react';
+import { TrendingUp, DollarSign, Users } from 'lucide-react';
 
 const Analytics: React.FC = () => {
   const [timeRange, setTimeRange] = useState('6months');

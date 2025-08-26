@@ -3,7 +3,7 @@ import { Play, Clock, Star, Award, BookOpen, CheckCircle, Lock } from 'lucide-re
 
 const LearningModules: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [completedModules, setCompletedModules] = useState(['1', '3']);
+  const [completedModules] = useState(['1', '3']);
 
   const categories = [
     { id: 'all', name: 'All Modules' },

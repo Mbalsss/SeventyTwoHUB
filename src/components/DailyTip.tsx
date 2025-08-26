@@ -62,7 +62,7 @@ const DailyTip: React.FC<DailyTipProps> = ({ language }) => {
     ]
   };
 
-  const currentTips = tips[language] || tips.en;
+  const currentTips = (tips as Record<string, typeof tips.en>)[language] || tips.en;
 
   useEffect(() => {
     const today = new Date().getDate();

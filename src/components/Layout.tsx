@@ -4,7 +4,7 @@ import Navigation from './Navigation';
 import Header from './Header';
 import MobileNav from './MobileNav';
 
-const Layout: React.FC = () => {
+const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
@@ -15,7 +15,7 @@ const Layout: React.FC = () => {
         <div className="flex-1 ml-56">
           <Header onMobileMenuToggle={() => setIsMobileNavOpen(!isMobileNavOpen)} />
           <main className="p-6">
-            <Outlet /> {/* Nested routes will render here */}
+            {children ? children : <Outlet />} {/* Nested routes will render here */}
           </main>
         </div>
       </div>

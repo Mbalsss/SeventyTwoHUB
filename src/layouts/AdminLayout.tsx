@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserCog } from 'lucide-react';
 import AdminMobileNav from '../components/admin/AdminMobileNav';
 
-const AdminLayout: React.FC = () => {
+const AdminLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
@@ -144,7 +144,7 @@ const AdminLayout: React.FC = () => {
 
           {/* Main Content */}
           <main className="flex-1 p-4 md:p-6">
-            <Outlet />
+            {children ? children : <Outlet />}
           </main>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, MessageSquare, Video, Star, Clock, Award, Search, Filter } from 'lucide-react';
+import { Users, MessageSquare, Video, Star } from 'lucide-react';
 
 const MentorshipHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('find-mentor');
