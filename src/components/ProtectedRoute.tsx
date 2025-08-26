@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import type { UserRole } from '../types/auth';
+import type { UserRole } from '../types/auth.types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -89,10 +89,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       if (userType === 'admin' && ['admin', 'super_admin', 'program_manager', 'client_admin'].includes(role)) {
         return true;
       }
-      if (userType === 'participant' && role === 'participant') {
-        return true;
-      }
-      return false;
+      return userType === 'participant' && role === 'participant';
+
     });
 
     if (!hasRequiredRole && !fallbackCheck) {

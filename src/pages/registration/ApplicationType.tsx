@@ -1,60 +1,42 @@
+// src/pages/registration/ApplicationType.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Wrench, DollarSign, ShoppingBag, Users, Calendar, Clock, RefreshCw } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { fetchActivePrograms, subscribeToProgramChanges } from '../../lib/applicationType.queries';
+import type {Program} from '../../types/applicationType.types';
 
 const ApplicationType: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [description, setDescription] = useState('');
-  const [availablePrograms, setAvailablePrograms] = useState<any[]>([]);
+  const [availablePrograms, setAvailablePrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadAvailablePrograms();
-    setupRealtimeSubscription();
-  }, []);
 
   const loadAvailablePrograms = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const { data, error } = await supabase
-        .from('programs')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      setAvailablePrograms(data || []);
-    } catch (error) {
-      console.error('Error loading programs:', error);
+      const data = await fetchActivePrograms();
+      setAvailablePrograms(data);
+    } catch (err) {
+      console.error('Error loading programs:', err);
       setError('Failed to load available programs. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    const subscription = supabase
-      .channel('programs_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'programs'
-      }, (payload) => {
-        console.log('Program change detected:', payload);
+  useEffect(() => {
         loadAvailablePrograms();
-      })
-      .subscribe();
+
+    const subscription = subscribeToProgramChanges(loadAvailablePrograms);
 
     return () => {
       subscription.unsubscribe();
     };
-  };
+  }, []);
 
   const getIconForProgram = (programName: string) => {
     const name = programName.toLowerCase();

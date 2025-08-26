@@ -10,7 +10,7 @@ import {
   getProgramEvents,
   getProgramMaterials,
   markMaterialAsAccessed
-} from '../lib/program.queries';
+} from '../lib/programDashboard.queries.ts';
 import type { ProgramRow, EnrollmentRow, EventRow, MaterialRow } from '../types/programDashboard.types.ts';
 
 const ProgramDashboard: React.FC = () => {

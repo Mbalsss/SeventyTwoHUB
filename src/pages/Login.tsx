@@ -1,19 +1,15 @@
 // src/pages/Login.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, TrendingUp, Users, Shield, User, Phone, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import type { UserRole } from '../types/auth';
+import type { LoginType, FormMode, LoginFormState, LoginErrors } from '../types/login.types';
+import { validateForm, checkRateLimit, updateLoginAttempts, parseAuthError } from '../lib/login.utils';
 
-type LoginType = 'user' | 'admin';
-type FormMode = 'login' | 'signup';
-
-const devCredentials = {
-  user: { email: 'user@bizboost.co.za', password: 'user123' },
-  admin: { email: 'admin@bizboost.co.za', password: 'admin123' },
-};
-
-const DEV_BYPASS_ENABLED = true; // flip to false for production
+// Read the bypass flag from environment variables.
+// The value is a string, so we compare it to 'true'.
+const DEV_BYPASS_ENABLED = import.meta.env.VITE_DEV_BYPASS_ENABLED === 'true';
+const MAX_LOGIN_ATTEMPTS = 5; // The component needs this for its JSX.
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -21,350 +17,99 @@ const Login: React.FC = () => {
 
   const [loginType, setLoginType] = useState<LoginType>('user');
   const [formMode, setFormMode] = useState<FormMode>('login');
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    mobileNumber: '',
-    rememberMe: false
+  const [formData, setFormData] = useState<LoginFormState>({
+    email: '', password: '', confirmPassword: '',
+    fullName: '', mobileNumber: '', rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<LoginErrors>({});
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isRateLimited, setIsRateLimited] = useState(false);
 
-  // Rate limiting configuration
-  const MAX_LOGIN_ATTEMPTS = 5;
-  const RATE_LIMIT_DURATION = 15 * 60 * 1000; // 15 minutes
-
-  const handleInputChange = (field: keyof typeof formData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear field-specific errors when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  // Client-side validation
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long';
-    }
-
-    // Admin-specific validation
-    if (loginType === 'admin') {
-      if (!formData.email.includes('admin') && !formData.email.endsWith('@bizboost.co.za')) {
-        newErrors.email = 'Admin accounts must use a valid admin email address';
-      }
-    }
-
-    // Signup-specific validation
-    if (formMode === 'signup') {
-      if (!formData.fullName.trim()) {
-        newErrors.fullName = 'Full name is required';
-      }
-
-      if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
-      } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-
-      if (formData.mobileNumber && !/^(\+27|0)[0-9]{9}$/.test(formData.mobileNumber.replace(/\s/g, ''))) {
-        newErrors.mobileNumber = 'Please enter a valid South African mobile number';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Rate limiting check
-  const checkRateLimit = (): boolean => {
-    const lastAttemptTime = localStorage.getItem('lastLoginAttempt');
-    const attemptCount = parseInt(localStorage.getItem('loginAttempts') || '0');
-
-    if (lastAttemptTime && attemptCount >= MAX_LOGIN_ATTEMPTS) {
-      const timeSinceLastAttempt = Date.now() - parseInt(lastAttemptTime);
-      if (timeSinceLastAttempt < RATE_LIMIT_DURATION) {
-        setIsRateLimited(true);
-        const remainingTime = Math.ceil((RATE_LIMIT_DURATION - timeSinceLastAttempt) / 60000);
-        setErrors({ general: `Too many login attempts. Please try again in ${remainingTime} minutes.` });
-        return false;
-      } else {
-        // Reset rate limiting
-        localStorage.removeItem('loginAttempts');
-        localStorage.removeItem('lastLoginAttempt');
-        setIsRateLimited(false);
-      }
-    }
-
-    return true;
-  };
-
-  // Update login attempts
-  const updateLoginAttempts = (success: boolean) => {
-    if (success) {
-      // Clear attempts on successful login
-      localStorage.removeItem('loginAttempts');
-      localStorage.removeItem('lastLoginAttempt');
-      setLoginAttempts(0);
-      setIsRateLimited(false);
-    } else {
-      // Increment attempts on failure
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
-      localStorage.setItem('loginAttempts', newAttempts.toString());
-      localStorage.setItem('lastLoginAttempt', Date.now().toString());
-    }
-  };
-
   const routeToDashboard = (userType: 'admin' | 'participant') => {
-    const path = userType === 'admin' ? '/admin/dashboard' : '/dashboard';
-    console.log('Login - Routing to dashboard:', { userType, path });
-    navigate(path, { replace: true });
+    navigate(userType === 'admin' ? '/admin/dashboard' : '/dashboard', { replace: true });
+  };
+
+  const handleInputChange = (field: keyof LoginFormState, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
-
-    // Clear previous errors
+    if (isLoading || isRateLimited) return;
     setErrors({});
 
-    // Client-side validation
-    if (!validateForm()) {
+    const rateLimit = checkRateLimit();
+    if (rateLimit.limited) {
+      setErrors({ general: rateLimit.message });
+      setIsRateLimited(true);
       return;
     }
 
-    // Rate limiting check
-    if (!checkRateLimit()) {
+    const validationErrors = validateForm(formData, formMode, loginType);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    if (formMode === 'signup') {
-      await handleSignUp();
-    } else {
+    setIsLoading(true);
+    if (formMode === 'login') {
       await handleLogin();
+    } else {
+      await handleSignUp();
     }
+    setIsLoading(false);
   };
 
   const handleLogin = async () => {
-    setIsLoading(true);
-    const email = formData.email.trim();
-    const password = formData.password;
-
-    try {
-      console.log('Login - Begin', { email, loginType });
-
-      // ---- DEV BYPASS ----
-      if (DEV_BYPASS_ENABLED) {
-        const chosen = devCredentials[loginType];
-        const match =
-            email.toLowerCase() === chosen.email.toLowerCase() && password === chosen.password;
-
-        if (match) {
-          console.log('Login - Using DEV BYPASS for', email);
-
-          // Update AuthContext with dev user before navigation
-          const devUserType = loginType === 'admin' ? 'admin' : 'participant';
-          const devRoles: UserRole[] = loginType === 'admin' ? ['admin'] : ['participant'];
-
-          // Set dev user in AuthContext - this is crucial!
-          setDevUser(email, devUserType, devRoles);
-
-          // optional: remember email locally
-          if (formData.rememberMe) localStorage.setItem('rememberedEmail', email);
-          else localStorage.removeItem('rememberedEmail');
-
-          updateLoginAttempts(true);
-          console.log('Login - DEV BYPASS routing to:', devUserType);
-
-          // Small delay to ensure context state is updated before navigation
-          setTimeout(() => {
-            routeToDashboard(devUserType);
-          }, 100);
+    // Dev Bypass Logic
+    if (DEV_BYPASS_ENABLED && formData.email.endsWith('@bizboost.dev')) {
+        const devUserType = formData.email.startsWith('admin') ? 'admin' : 'participant';
+        setDevUser(formData.email, devUserType, [devUserType]); // The component doesn't need to know UserRole type here
+        setTimeout(() => routeToDashboard(devUserType), 100);
           return;
         }
-      }
 
-      // ---- REAL SUPABASE LOGIN ----
-      const { userType, error } = await signIn(email, password);
+    const { userType, error } = await signIn(formData.email, formData.password);
 
       if (error) {
-        console.warn('Login - Supabase error:', error);
-
-        // Handle specific error types
-        if (error.message?.includes('Invalid login credentials')) {
-          setErrors({ general: 'Invalid email or password. Please check your credentials and try again.' });
-        } else if (error.message?.includes('Email not confirmed')) {
-          setErrors({ general: 'Please confirm your email address before signing in.' });
-        } else if (error.message?.includes('Too many requests')) {
-          setErrors({ general: 'Too many login attempts. Please wait before trying again.' });
-        } else if (error.message?.includes('Access denied')) {
-          setErrors({ general: error.message });
+      setErrors({ general: parseAuthError(error) });
+      updateLoginAttempts(false); // Manages localStorage
+      setLoginAttempts(prev => prev + 1); // Manages component state
         } else {
-          setErrors({ general: error?.message || 'Login failed. Please try again.' });
-        }
-
-        updateLoginAttempts(false);
-        return;
-      }
-
-      // Verify that the returned userType matches the selected loginType
+      updateLoginAttempts(true); // Manages localStorage
+      setLoginAttempts(0); // Manages component state
       if (loginType === 'admin' && userType !== 'admin') {
-        setErrors({ general: 'Access denied. This account does not have admin privileges.' });
-        updateLoginAttempts(false);
+        setErrors({ general: 'Access denied. This account lacks admin privileges.' });
         return;
       }
-
-      if (loginType === 'user' && userType === 'admin') {
-        // Admin trying to login as user - redirect to admin
-        console.log('Login - Admin account detected, redirecting to admin dashboard');
-        routeToDashboard('admin');
-        return;
-      }
-
-      // optional: remember email locally
-      if (formData.rememberMe) localStorage.setItem('rememberedEmail', email);
-      else localStorage.removeItem('rememberedEmail');
-
-      updateLoginAttempts(true);
-      console.log('Login - Supabase routing to:', userType);
-
-      // Add small delay to ensure auth context is fully updated
-      setTimeout(() => {
-        routeToDashboard(userType);
-      }, 500);
-    } catch (err) {
-      console.error('Login - Unexpected error:', err);
-      setErrors({ general: 'An unexpected error occurred. Please try again later.' });
-      updateLoginAttempts(false);
-    } finally {
-      setIsLoading(false);
+      setTimeout(() => routeToDashboard(userType), 500);
     }
   };
 
   const handleSignUp = async () => {
-    setIsLoading(true);
-    const email = formData.email.trim();
-    const password = formData.password;
-    const fullName = formData.fullName.trim();
-    const mobileNumber = formData.mobileNumber.trim();
-
-    try {
-      console.log('SignUp - Begin', { email, loginType, fullName });
-
-      // Additional client-side validation
-      if (!email || !password || !fullName) {
-        setErrors({ general: 'Please fill in all required fields' });
-        return;
-      }
-
-      // Validate email format
-      if (!email.includes('@') || email.length < 5) {
-        setErrors({ email: 'Please enter a valid email address' });
-        return;
-      }
-
-      // Validate password strength
-      if (password.length < 6) {
-        setErrors({ password: 'Password must be at least 6 characters long' });
-        return;
-      }
-
-      // Create user account with role metadata
-      const { user, error } = await signUp(email, password, {
-        full_name: fullName,
-        mobile_number: mobileNumber
+    const { error } = await signUp(formData.email, formData.password, {
+      full_name: formData.fullName,
+      mobile_number: formData.mobileNumber
       });
 
       if (error) {
-        console.warn('SignUp - Supabase error:', error);
-
-        // Handle specific error types with user-friendly messages
-        if (error.message?.includes('already registered') || error.message?.includes('User already registered') || error.message?.includes('already been registered')) {
-          setErrors({ general: 'An account with this email already exists. Please try logging in instead.' });
-          setFormMode('login');
-          return;
-        }
-
-        if (error.message?.includes('Password should be at least') || error.message?.includes('Password must be at least')) {
-          setErrors({ password: 'Password must be at least 6 characters long' });
-          return;
-        }
-
-        if (error.message?.includes('Unable to validate email address') || error.message?.includes('Invalid email')) {
-          setErrors({ email: 'Please enter a valid email address' });
-          return;
-        }
-
-        if (error.message?.includes('Database error saving new user') || error.message?.includes('infinite recursion')) {
-          setErrors({ general: 'Account creation is processing. Please wait a moment and try signing in, or contact support if you continue to have issues.' });
-          return;
-        }
-
-        if (error.message?.includes('row-level security policy') || error.message?.includes('42501')) {
-          setErrors({ general: 'Account creation failed due to permissions. Please contact support for assistance.' });
-          return;
-        }
-
-        if (error.message?.includes('Account creation failed')) {
-          setErrors({ general: error.message });
-          return;
-        }
-
-        if (error.message?.includes('trigger') || error.message?.includes('function') || error.message?.includes('recursion')) {
-          setErrors({ general: 'Account creation is processing. Please try signing in after a few moments.' });
-          return;
-        }
-
-        // Generic fallback
-        setErrors({ general: 'Error creating account. Please check your information and try again. If the problem persists, contact support.' });
-        return;
-      }
-
-      if (user) {
-        // For new signups, determine user type based on login type selection
-        const userType = loginType === 'admin' ? 'admin' : 'participant';
-
-        // Store user type for routing
-        localStorage.setItem('userType', userType);
-        localStorage.setItem('userEmail', email);
-
-        console.log('SignUp - Account created successfully for:', email, 'as', userType);
-
-        // Show success message with instructions
-        alert('Account created successfully! Your profile is being set up. You will be redirected to your dashboard.');
-
-        // Wait a moment for the database trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        routeToDashboard(userType);
-      }
-    } catch (err) {
-      console.error('SignUp - Unexpected error:', err);
-      setErrors({ general: 'An unexpected error occurred during account creation. Please try again later or contact support if the issue persists.' });
-    } finally {
-      setIsLoading(false);
+      setErrors({ general: parseAuthError(error) });
+    } else {
+      alert('Account created! Please check your email to verify your account before logging in.');
+      setFormMode('login');
+      resetForm();
     }
   };
-
 
   const resetForm = () => {
     setFormData({
@@ -376,18 +121,16 @@ const Login: React.FC = () => {
     setIsRateLimited(false);
   };
 
-  // Load remembered email on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       setFormData(prev => ({ ...prev, email: rememberedEmail, rememberMe: true }));
     }
-
-    // Check for existing rate limiting
     const attempts = parseInt(localStorage.getItem('loginAttempts') || '0');
     setLoginAttempts(attempts);
-    if (attempts >= MAX_LOGIN_ATTEMPTS) {
-      checkRateLimit();
+
+    if (checkRateLimit().limited) {
+      setIsRateLimited(true);
     }
   }, []);
 

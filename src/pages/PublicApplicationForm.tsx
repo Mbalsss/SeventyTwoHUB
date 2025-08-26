@@ -1,47 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react'; // **FIX 10: Import useCallback**
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TrendingUp, Upload, Send } from 'lucide-react';
-import { getProgramByLinkId, submitProgramApplication } from '../lib/publicApplicationFormQueries';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from "../supabaseClient";
-
-// **FIX 1: Define an interface for the Program data**
-interface Program {
-  id: string;
-  name: string;
-  description: string;
-  application_deadline?: string;
-}
-
-// **FIX 2: Define an interface for a single form field**
-interface FormField {
-  id: string;
-  type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'file';
-  label: string;
-  required: boolean;
-  options?: string[];
-  placeholder?: string;
-}
-
-// **FIX 3: Define an interface for the entire Application Form structure**
-interface ApplicationForm {
-  id: string;
-  program_id: string;
-  is_active: boolean;
-  form_config: {
-    fields: FormField[];
-  };
-}
-
-// **FIX 4: Define a type for the dynamic form data object**
-type FormData = Record<string, string | number>;
+// The component only needs to know about the high-level functions
+import { getProgramByLinkId, getActiveApplicationForm, handleFullApplicationSubmission } from '../lib/publicApplicationForm.queries';
+import type { Program, ApplicationForm, FormField, FormData } from '../types/publicApplicationForm.types';
 
 const PublicApplicationForm: React.FC = () => {
   const { linkId } = useParams<{ linkId: string }>();
   const navigate = useNavigate();
   const { signUp } = useAuth();
 
-  // **FIX 5: Use the new, specific interfaces instead of `any`**
   const [program, setProgram] = useState<Program | null>(null);
   const [applicationForm, setApplicationForm] = useState<ApplicationForm | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,85 +18,56 @@ const PublicApplicationForm: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({});
   const [files, setFiles] = useState<Record<string, File>>({});
 
-  // **FIX 11: Wrap the data loading function in useCallback**
   const loadProgramAndForm = useCallback(async () => {
     if (!linkId) return;
-
     try {
       setLoading(true);
       const programData = await getProgramByLinkId(linkId);
       setProgram(programData);
 
-      if (!programData?.id) {
-        throw new Error("Program data is invalid or missing ID.");
-      }
-
-      const { data: form, error: formError } = await supabase
-        .from('application_forms')
-        .select('*')
-        .eq('program_id', programData.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      // **FIX 12: Refactored error handling to avoid "throw caught locally"**
-      if (formError) {
-        console.error('Error loading application form:', formError);
-        alert('Could not load the application form. Please try again later.');
-        navigate('/');
-        return; // Exit function
-      }
-      
+      const form = await getActiveApplicationForm(programData.id);
       if (!form) {
-        console.error('No active application form found for this program');
-        alert('No active application form found for this program.');
-        navigate('/');
-        return; // Exit function
+        throw new Error("No active application form found for this program.");
       }
-      
       setApplicationForm(form);
-
-    } catch (error) {
-      console.error('Error loading program:', error);
-      alert('Program not found or no longer accepting applications.');
+    } catch (error: unknown) { // Corrected: Type is 'unknown'
+      console.error('Error loading program and form:', error);
+      // Type guard to safely access error message
+      const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+      alert(`Could not load the application: ${message}`);
       navigate('/');
     } finally {
       setLoading(false);
     }
-  }, [linkId, navigate]); // **FIX 13: Add dependencies for useCallback**
+  }, [linkId, navigate]);
 
-  // **FIX 14: Use the memoized function in useEffect**
   useEffect(() => {
     loadProgramAndForm();
   }, [loadProgramAndForm]);
 
-  // **FIX 6: Use a more specific type for the value**
   const handleInputChange = (fieldId: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [fieldId]: value }));
   };
 
   const handleFileChange = (fieldId: string, file: File | null) => {
-    if (file) {
-      setFiles(prev => ({ ...prev, [fieldId]: file }));
-    } else {
-      // Allow removing a file
-      const newFiles = { ...files };
-      delete newFiles[fieldId];
-      setFiles(newFiles);
-    }
+    setFiles(prev => {
+      const newFiles = { ...prev };
+      if (file) {
+        newFiles[fieldId] = file;
+      } else {
+        delete newFiles[fieldId];
+      }
+      return newFiles;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!program) {
-      alert("Program data is missing. Cannot submit.");
-      return;
-    }
+    if (!program) return alert("Program data is missing. Cannot submit.");
 
     setSubmitting(true);
-
     try {
-      // **FIX 15: Refactored error handling to be more direct**
+      // Step 1: Sign up the user (Component's responsibility)
       const { user: authUser, error: authError } = await signUp(
         String(formData.email),
         String(formData.password) || `temp_${Date.now()}`,
@@ -138,56 +78,16 @@ const PublicApplicationForm: React.FC = () => {
         throw authError || new Error('Failed to create user account. The email might already be in use.');
       }
 
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .insert({
-          owner_id: authUser.id,
-          business_name: formData.business_name,
-          business_category: formData.business_category,
-          business_location: formData.business_location,
-          business_type: formData.business_type,
-          number_of_employees: formData.number_of_employees,
-          monthly_revenue: formData.monthly_revenue,
-          years_in_operation: parseInt(String(formData.years_in_operation)) || 0,
-          beee_level: formData.beee_level || 'not_certified'
-        })
-        .select()
-        .single();
-
-      if (businessError || !businessData) {
-        throw businessError || new Error('Failed to create business record.');
-      }
-
-      const uploadedFiles: Record<string, string> = {};
-      for (const [fieldId, file] of Object.entries(files)) {
-        const fileName = `${authUser.id}/${fieldId}_${Date.now()}_${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(fileName, file);
-
-        if (uploadError || !uploadData) {
-            throw uploadError || new Error(`Failed to upload file: ${file.name}`);
-        }
-        uploadedFiles[fieldId] = uploadData.path;
-      }
-
-      // Submit application
-      await submitProgramApplication({
-        program_id: program.id,
-        applicant_id: authUser.id,
-        business_id: businessData.id,
-        application_data: {
-          ...formData,
-          uploaded_files: uploadedFiles
-        }
-      });
+      // Step 2: Pass all data to the single orchestration function
+      await handleFullApplicationSubmission(authUser.id, program.id, formData, files);
 
       alert('Application submitted successfully! You will receive an email confirmation shortly.');
       navigate('/login');
-
-    } catch (error: any) {
+    } catch (error: unknown) { // Corrected: Type is 'unknown'
       console.error('Error submitting application:', error);
-      alert(`Error submitting application: ${error.message || 'Please check your details and try again.'}`);
+      // Type guard to safely access error message
+      const message = error instanceof Error ? error.message : 'Please check your details and try again.';
+      alert(`Error submitting application: ${message}`);
     } finally {
       setSubmitting(false);
     }

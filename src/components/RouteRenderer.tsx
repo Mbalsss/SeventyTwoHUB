@@ -3,7 +3,7 @@ import { Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import Layout from './Layout';
 import AdminLayout from '../layouts/AdminLayout';
-import type { RouteConfig } from '../types/auth';
+import type { RouteConfig } from '../types/auth.types';
 
 interface RouteRendererProps {
   route: RouteConfig;
