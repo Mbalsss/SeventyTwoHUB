@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, DollarSign, Calendar, MapPin, ExternalLink, Bookmark, Star } from 'lucide-react';
+import { Search, DollarSign, Calendar, MapPin, ExternalLink, Bookmark, Star } from 'lucide-react';
 
 const FundingFinder: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,7 +134,7 @@ const FundingFinder: React.FC = () => {
   ];
 
   const getTypeColor = (type: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       grants: 'bg-green-100 text-green-800',
       loans: 'bg-blue-100 text-blue-800',
       competitions: 'bg-purple-100 text-purple-800',

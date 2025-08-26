@@ -1,12 +1,13 @@
 import React from 'react';
-import { Icon, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;
   value: string;
   change: string;
   trend: 'up' | 'down';
-  icon: Icon;
+  icon: LucideIcon;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, trend, icon: Icon }) => {

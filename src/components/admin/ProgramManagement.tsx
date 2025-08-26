@@ -32,7 +32,7 @@ import { useAuth } from '../../context/AuthContext';
 interface Program {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   status: 'draft' | 'active' | 'completed' | 'cancelled';
   start_date?: string;
   end_date?: string;

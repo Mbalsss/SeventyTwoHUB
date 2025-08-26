@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus,
     Search,
     Edit,
     Trash2,
@@ -118,7 +117,7 @@ const AdminUserManagement: React.FC = () => {
                     // Try to get email from auth metadata if available
                     const { data: authUser } = await supabase.auth.admin.getUserById(userId);
                     userEmail = authUser.user?.email || 'Email protected';
-                } catch (error) {
+                } catch {
                     // Fallback: email is protected for security
                     console.log('Email access restricted for security');
                 }

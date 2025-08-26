@@ -1,4 +1,4 @@
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import type { RouteConfig } from '../types/auth';
 
 // Lazy load components for better performance
