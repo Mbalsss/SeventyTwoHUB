@@ -6,10 +6,10 @@ const WelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-      <div className="min-h-screen relative overflow-hidden group/page">
-        {/* Background with tropical beach image */}
+      <div className="min-h-screen relative group/page">
+        {/* Background with tropical beach image - NO MORE BLUR */}
         <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300 group-hover/dropdown:blur-sm"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), 
                            url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
@@ -17,7 +17,7 @@ const WelcomeScreen: React.FC = () => {
         />
 
         {/* Navigation Header */}
-        <nav className="relative z-10 flex items-center justify-between px-6 py-4">
+        <nav className="relative z-20 flex items-center justify-between px-6 py-4">
           <div className="flex items-center">
             <div className="flex items-center mr-8">
               <img
@@ -29,12 +29,12 @@ const WelcomeScreen: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
-            {/* About Us Dropdown */}
+            {/* About Us Dropdown - SOLID BACKGROUND */}
             <div className="relative group group/dropdown">
               <div className="text-white hover:text-blue-300 cursor-pointer">
                 <span>About Us</span>
               </div>
-              <div className="absolute top-full left-0 mt-2 w-80 bg-blue-300/95 backdrop-blur-sm rounded-lg shadow-xl border border-blue-400/30 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+              <div className="absolute top-full left-0 mt-2 w-80 bg-slate-900 rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-3">About SeventyTwo X</h3>
                   <p className="text-white text-sm leading-relaxed mb-4">
@@ -59,12 +59,12 @@ const WelcomeScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Startup Success Toolkit Dropdown */}
+            {/* Startup Success Toolkit Dropdown - SOLID BACKGROUND */}
             <div className="relative group group/dropdown">
               <div className="text-white hover:text-blue-300 cursor-pointer">
                 <span>Startup Success Toolkit</span>
               </div>
-              <div className="absolute top-full left-0 mt-2 w-80 bg-blue-300/95 backdrop-blur-sm rounded-lg shadow-xl border border-blue-400/30 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+              <div className="absolute top-full left-0 mt-2 w-80 bg-slate-900 rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-3">Startup Success Toolkit</h3>
                   <p className="text-white text-sm leading-relaxed mb-4">
@@ -92,12 +92,12 @@ const WelcomeScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Education & Learning Dropdown */}
+            {/* Education & Learning Dropdown - SOLID BACKGROUND */}
             <div className="relative group group/dropdown">
               <div className="text-white hover:text-blue-300 cursor-pointer">
                 <span>Education & Learning</span>
               </div>
-              <div className="absolute top-full left-0 mt-2 w-80 bg-blue-300/95 backdrop-blur-sm rounded-lg shadow-xl border border-blue-400/30 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+              <div className="absolute top-full left-0 mt-2 w-80 bg-slate-900 rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-3">Education & Learning</h3>
                   <p className="text-white text-sm leading-relaxed mb-4">
@@ -137,9 +137,9 @@ const WelcomeScreen: React.FC = () => {
         </nav>
 
         {/* Main Content */}
-        <div className="relative z-10 flex items-center min-h-[calc(100vh-80px)] px-8 transition-all duration-300 group-hover/dropdown:blur-sm">
+        <div className="relative z-10 flex items-center min-h-[calc(100vh-80px)] px-8">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-3 items-center">
-            {/* Left side - Form/Card (WeTransfer style - smaller) */}
+            {/* Left side - Form/Card */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 max-w-xs">
               <div className="text-center mb-4">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -175,7 +175,7 @@ const WelcomeScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Right side - Content (wider, smaller fonts) */}
+            {/* Right side - Content */}
             <div className="text-white text-center lg:text-left lg:col-span-2">
               <p className="text-xl mb-3 opacity-90">Welcome to SeventyTwo X</p>
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-5">
@@ -197,10 +197,7 @@ const WelcomeScreen: React.FC = () => {
                     Offering personalized tools, educational resources, and a supportive community,
                     SeventyTwo X helps entrepreneurs overcome challenges like limited access to growth tools,
                     digital adoption issues, and lack of local mentorship.
-
                   </p>
-
-                  {/* Additional content can be added here */}
                   <p className="text-sm opacity-90 mb-3 leading-relaxed">
                     With localized content, multi-language support, and affordable business software,
                     our platform provides a mobile-first experience optimized for low-bandwidth environments.
