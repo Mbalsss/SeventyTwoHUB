@@ -1,4 +1,4 @@
-// src/lib/program.queries.ts
+// src/lib/programDashboard.queries.ts
 
 import { supabase } from "../supabaseClient";
 import type { ProgramRow, EnrollmentRow, EventRow, MaterialRow } from '../types/programDashboard.types.ts';

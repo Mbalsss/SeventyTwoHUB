@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import type { RouteConfig } from '../types/auth';
+import type { RouteConfig } from '../types/auth.types';
 
 // Lazy load components for better performance
 const Dashboard = lazy(() => import('../pages/Dashboard'));

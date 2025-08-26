@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Edit, Save, Bell, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile, getUserBusiness } from '../lib/supabase';
+import { fetchCombinedProfileData } from '../lib/profile.queries';
+import type {ProfileData} from '../types/profile.types';
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -9,7 +10,7 @@ const Profile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useState<ProfileData>({
     name: '',
     email: '',
     phone: '',
@@ -22,35 +23,11 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      loadUserData();
-    }
-  }, [user]);
-
   const loadUserData = async () => {
     try {
       setLoading(true);
-      
-      // Load user profile
-      const profile = await getUserProfile(user!.id);
-      
-      // Try to load business data
-      let business = null;
-      try {
-        business = await getUserBusiness(user!.id);
-      } catch { 
-        console.log('No business data found for user');
-      }
-      
-      setProfileData({
-        name: profile?.full_name || '',
-        email: user!.email || '',
-        phone: profile?.mobile_number || '',
-        company: business?.business_name || '',
-        industry: business?.business_category || 'Technology',
-        location: business?.business_location || '',
-        founded: business?.created_at ? new Date(business.created_at).getFullYear().toString() : '2020',
-        employees: business?.number_of_employees || '1 (Just me)',
-      });
+          const data = await fetchCombinedProfileData(user);
+          setProfileData(data);
     } catch (error) {
       console.error('Error loading user data:', error);
       // Set default values if profile loading fails
@@ -68,13 +45,17 @@ const Profile: React.FC = () => {
       setLoading(false);
     }
   };
+      loadUserData();
+    }
+  }, [user]);
+
   const tabs = [
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'security', name: 'Security', icon: Shield },
   ];
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -84,7 +65,7 @@ const Profile: React.FC = () => {
       // Use AuthContext updateProfile function
       const { success, error } = await updateProfile({
         full_name: profileData.name,
-        mobile_number: profileData.phone
+        mobile_number: profileData.phone,
       });
       
       if (!success) {
@@ -127,9 +108,7 @@ const Profile: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <nav className="space-y-2">
-              {tabs.map(tab => {
-                const Icon = tab.icon;
-                return (
+              {tabs.map(tab => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
@@ -139,11 +118,10 @@ const Profile: React.FC = () => {
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                  <tab.icon className="w-4 h-4" />
                     <span className="font-medium">{tab.name}</span>
                   </button>
-                );
-              })}
+              ))}
             </nav>
           </div>
         </div>
@@ -156,7 +134,7 @@ const Profile: React.FC = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
                   <button
-                    onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                    onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
                     disabled={saving}
                     className="flex items-center space-x-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                   >
