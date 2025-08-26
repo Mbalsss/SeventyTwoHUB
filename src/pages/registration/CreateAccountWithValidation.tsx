@@ -96,7 +96,7 @@ const CreateAccountWithValidation: React.FC = () => {
 
             // Check if application is approved
             if (applicationData.status !== 'approved') {
-                const statusMessages = {
+                const statusMessages: Record<string, string> = {
                     'pending': 'Your application is still pending review. Please wait for approval before creating an account.',
                     'under_review': 'Your application is currently under review. Please wait for approval before creating an account.',
                     'rejected': 'Your application has been rejected. Please contact support for more information.',
@@ -130,7 +130,7 @@ const CreateAccountWithValidation: React.FC = () => {
             }
 
             // Check if reference number has been used (additional safety check)
-            const { data: usedRef, error: refError } = await supabase
+            const { error: refError } = await supabase
                 .from('business_registrations')
                 .select('id')
                 .eq('reference_number', referenceData.referenceNumber.trim())

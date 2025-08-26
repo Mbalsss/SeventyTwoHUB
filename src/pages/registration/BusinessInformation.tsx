@@ -1,10 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building, MapPin, Users, User, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Building, MapPin, User, Mail, Phone } from 'lucide-react';
+
+type FormDataState = {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  emailAddress: string;
+  cellphoneNumber: string;
+  businessName: string;
+  cityTownship: string;
+  businessResidentialCorridor: string;
+  businessIndustry: string;
+  businessDescription: string;
+  consentToShare: boolean;
+  declaration: boolean;
+};
 
 const BusinessInformation: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataState>({
     firstName: '',
     lastName: '',
     gender: '',
@@ -59,7 +74,7 @@ const BusinessInformation: React.FC = () => {
     'Other'
   ];
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormDataState, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -67,7 +82,7 @@ const BusinessInformation: React.FC = () => {
     e.preventDefault();
     
     // Validate required fields
-    const requiredFields = [
+    const requiredFields: (keyof FormDataState)[] = [
       'firstName', 'lastName', 'gender', 'emailAddress', 'cellphoneNumber', 
       'businessName', 'businessResidentialCorridor'
     ];

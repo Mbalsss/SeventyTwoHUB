@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, TrendingUp, Users, Shield, User, Phone, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import type { UserRole } from '../types/auth';
 
 type LoginType = 'user' | 'admin';
 type FormMode = 'login' | 'signup';
@@ -182,7 +183,7 @@ const Login: React.FC = () => {
 
           // Update AuthContext with dev user before navigation
           const devUserType = loginType === 'admin' ? 'admin' : 'participant';
-          const devRoles = loginType === 'admin' ? ['admin'] : ['participant'];
+          const devRoles: UserRole[] = loginType === 'admin' ? ['admin'] : ['participant'];
 
           // Set dev user in AuthContext - this is crucial!
           setDevUser(email, devUserType, devRoles);
@@ -364,10 +365,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const fillDemoCredentials = () => {
-    const creds = devCredentials[loginType];
-    setFormData((prev) => ({ ...prev, email: creds.email, password: creds.password }));
-  };
 
   const resetForm = () => {
     setFormData({

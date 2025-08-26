@@ -106,10 +106,10 @@ const AdminUserManagement: React.FC = () => {
             const userMap = new Map<string, AdminUser>();
 
             for (const roleData of userRoles || []) {
-                const profile = roleData.profiles;
+                const profile = Array.isArray(roleData.profiles) ? roleData.profiles[0] : roleData.profiles;
                 if (!profile) continue;
 
-                const userId = profile.id;
+                const userId = profile.id as string;
 
                 // Get user email from auth.users (if accessible)
                 let userEmail = 'Email protected';

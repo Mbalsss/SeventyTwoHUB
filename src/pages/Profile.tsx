@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Building, Mail, Phone, MapPin, Edit, Save, Bell, Shield, Trash2 } from 'lucide-react';
+import { User, Edit, Save, Bell, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { supabase, getUserProfile, getUserBusiness } from '../lib/supabase';
+import { getUserProfile, getUserBusiness } from '../lib/supabase';
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -37,7 +37,7 @@ const Profile: React.FC = () => {
       let business = null;
       try {
         business = await getUserBusiness(user!.id);
-      } catch (error) {
+      } catch { 
         console.log('No business data found for user');
       }
       

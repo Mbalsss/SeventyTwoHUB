@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.warn('AuthContext - User state update failed, using defaults:', error);
             
             // Use fallback values
-            const fallbackRoles = determinedUserType === 'admin' ? ['admin'] : ['participant'];
+            const fallbackRoles: UserRole[] = determinedUserType === 'admin' ? ['admin'] : ['participant'];
             const enhancedUser: AuthUser = {
               ...authUser,
               userType: determinedUserType,
@@ -172,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('AuthContext - User state update timeout, using immediate fallback');
           
           // Immediate fallback
-          const fallbackRoles = determinedUserType === 'admin' ? ['admin'] : ['participant'];
+          const fallbackRoles: UserRole[] = determinedUserType === 'admin' ? ['admin'] : ['participant'];
           const enhancedUser: AuthUser = {
             ...authUser,
             userType: determinedUserType,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, AppWindow, ExternalLink, Star, Download, ShoppingCart, Play, Zap } from 'lucide-react';
+import { Search, AppWindow, ExternalLink, Star, Download, ShoppingCart, Play, Zap } from 'lucide-react';
 
 const Applications: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

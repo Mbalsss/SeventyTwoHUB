@@ -34,11 +34,11 @@ interface Program {
   name: string;
   description?: string;
   status: 'draft' | 'active' | 'completed' | 'cancelled';
-  start_date?: string;
-  end_date?: string;
-  max_participants?: number;
-  application_deadline?: string;
-  application_link_id?: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  max_participants?: number | null;
+  application_deadline?: string | null;
+  application_link_id?: string | null;
   created_at: string;
   applications_count: number;
   enrollments_count: number;

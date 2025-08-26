@@ -47,13 +47,11 @@ export const useAdminData = () => {
       const [
         usersResult,
         programsResult,
-        registrationsResult,
-        enrollmentsResult
+        registrationsResult
       ] = await Promise.all([
         supabase.from('profiles').select('id, created_at'),
         supabase.from('programs').select('id, status, created_at'),
-        supabase.from('business_registrations').select('id, status, created_at'),
-        supabase.from('program_enrollments').select('id, enrolled_at')
+        supabase.from('business_registrations').select('id, status, created_at')
       ]);
 
       // Calculate basic stats
@@ -107,6 +105,22 @@ export const useAdminData = () => {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // Define lightweight result types to avoid 'never' in conditional access
+      type MaybeArray<T> = T | T[] | null;
+      type ApplicationRow = {
+        id: string;
+        status: string;
+        submitted_at: string;
+        programs: MaybeArray<{ name: string }>;
+        profiles: MaybeArray<{ full_name: string }>;
+      };
+      type EnrollmentRow = {
+        id: string;
+        enrolled_at: string;
+        programs: MaybeArray<{ name: string }>;
+        profiles: MaybeArray<{ full_name: string }>;
+      };
+
       // Load recent applications
       const { data: applications } = await supabase
         .from('program_applications')
@@ -130,6 +144,9 @@ export const useAdminData = () => {
         .order('enrolled_at', { ascending: false })
         .limit(10);
 
+      const apps = (applications || []) as unknown as ApplicationRow[];
+      const enrs = (enrollments || []) as unknown as EnrollmentRow[];
+
       // Combine and sort all activities
       const activities: RecentActivity[] = [
         ...(registrations || []).map(reg => ({
@@ -140,19 +157,19 @@ export const useAdminData = () => {
           timestamp: reg.created_at,
           status: reg.status
         })),
-        ...(applications || []).map(app => ({
+        ...apps.map(app => ({
           id: `app-${app.id}`,
           type: 'application' as const,
           title: 'Program application',
-          description: `${app.profiles?.full_name} applied to ${app.programs?.name}`,
+          description: `${(Array.isArray(app.profiles) ? app.profiles[0]?.full_name : app.profiles?.full_name) || 'Unknown'} applied to ${(Array.isArray(app.programs) ? app.programs[0]?.name : app.programs?.name) || 'a program'}`,
           timestamp: app.submitted_at,
           status: app.status
         })),
-        ...(enrollments || []).map(enr => ({
+        ...enrs.map(enr => ({
           id: `enr-${enr.id}`,
           type: 'enrollment' as const,
           title: 'Program enrollment',
-          description: `${enr.profiles?.full_name} enrolled in ${enr.programs?.name}`,
+          description: `${(Array.isArray(enr.profiles) ? enr.profiles[0]?.full_name : enr.profiles?.full_name) || 'Unknown'} enrolled in ${(Array.isArray(enr.programs) ? enr.programs[0]?.name : enr.programs?.name) || 'a program'}`,
           timestamp: enr.enrolled_at,
           status: 'active'
         }))

@@ -51,33 +51,34 @@ export const formatRegistrationStatus = (status: string): string => {
 export const getStatusColor = (status: string, type: 'user' | 'program' | 'application' | 'registration'): string => {
   const colorMaps = {
     user: {
-      'active': 'bg-green-100 text-green-800',
-      'inactive': 'bg-gray-100 text-gray-800',
-      'suspended': 'bg-red-100 text-red-800'
+      active: 'bg-green-100 text-green-800',
+      inactive: 'bg-gray-100 text-gray-800',
+      suspended: 'bg-red-100 text-red-800'
     },
     program: {
-      'draft': 'bg-yellow-100 text-yellow-800',
-      'active': 'bg-green-100 text-green-800',
-      'completed': 'bg-blue-100 text-blue-800',
-      'cancelled': 'bg-red-100 text-red-800'
+      draft: 'bg-yellow-100 text-yellow-800',
+      active: 'bg-green-100 text-green-800',
+      completed: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-red-100 text-red-800'
     },
     application: {
-      'draft': 'bg-gray-100 text-gray-800',
-      'submitted': 'bg-yellow-100 text-yellow-800',
-      'under_review': 'bg-blue-100 text-blue-800',
-      'approved': 'bg-green-100 text-green-800',
-      'rejected': 'bg-red-100 text-red-800'
+      draft: 'bg-gray-100 text-gray-800',
+      submitted: 'bg-yellow-100 text-yellow-800',
+      under_review: 'bg-blue-100 text-blue-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800'
     },
     registration: {
-      'pending': 'bg-gray-100 text-gray-800',
-      'under_review': 'bg-blue-100 text-blue-800',
-      'approved': 'bg-green-100 text-green-800',
-      'rejected': 'bg-red-100 text-red-800',
-      'requires_documents': 'bg-yellow-100 text-yellow-800'
+      pending: 'bg-gray-100 text-gray-800',
+      under_review: 'bg-blue-100 text-blue-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      requires_documents: 'bg-yellow-100 text-yellow-800'
     }
-  };
+  } as const;
 
-  return colorMaps[type][status] || 'bg-gray-100 text-gray-800';
+  const map = colorMaps[type] as Record<string, string>;
+  return map[status] || 'bg-gray-100 text-gray-800';
 };
 
 export const calculateGrowthRate = (current: number, previous: number): number => {

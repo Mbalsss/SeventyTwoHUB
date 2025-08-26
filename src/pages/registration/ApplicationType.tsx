@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wrench, DollarSign, ShoppingBag, Users, Calendar, MapPin, Clock, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Wrench, DollarSign, ShoppingBag, Users, Calendar, Clock, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const ApplicationType: React.FC = () => {

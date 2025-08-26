@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { Map, ArrowRight, CheckCircle, Clock, Star, Download } from 'lucide-react';
+import { Map, ArrowRight, CheckCircle, Clock, Download } from 'lucide-react';
+
+type FormDataState = {
+  businessType: string;
+  industry: string;
+  stage: string;
+  revenue: string;
+  employees: string;
+  goals: string[];
+  timeline: string;
+};
 
 const RoadmapGenerator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataState>({
     businessType: '',
     industry: '',
     stage: '',
